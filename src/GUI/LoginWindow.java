@@ -11,14 +11,17 @@ public class LoginWindow extends JFrame {
     private JPasswordField passwordField;
     private JButton loginButton;
     private JButton cancelButton;
+    private Controllers controllers;
 
-    public LoginWindow() {
+    public LoginWindow(Controllers controllers) {
+        this.controllers = controllers;
+
         // Ustawienia okna
         setTitle("Login Window");
         setSize(300, 150);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        
+
         // Panel główny
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(3, 2));
@@ -50,6 +53,9 @@ public class LoginWindow extends JFrame {
                 // Logika logowania (do zaimplementowania)
                 JOptionPane.showMessageDialog(LoginWindow.this,
                         "User: " + user + "\nPassword: " + new String(password));
+                
+                // Example of interaction with controllers
+                // controllers.login(user, new String(password)); // Implement this method in Controllers
             }
         });
         panel.add(loginButton);
@@ -59,21 +65,13 @@ public class LoginWindow extends JFrame {
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0);
+                controllers.getMainWindow().setVisible(true);
+                setVisible(false);
             }
         });
         panel.add(cancelButton);
 
         // Dodanie panelu do okna
         add(panel);
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new LoginWindow().setVisible(true);
-            }
-        });
     }
 }

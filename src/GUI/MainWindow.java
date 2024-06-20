@@ -1,15 +1,22 @@
-
 package src.GUI;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class MainWindow {
+public class MainWindow extends JFrame {
+    private Controllers controllers;
+
+    public MainWindow(Controllers controllers) {
+        this.controllers = controllers;
+        controllers.setMainWindow(this);
+        createAndShowGUI();
+    }
+
     public void createAndShowGUI() {
-        JFrame frame = new JFrame("Moja Aplikacja");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
+        setTitle("Moja Aplikacja");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
 
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
@@ -26,10 +33,10 @@ public class MainWindow {
         menuBar.add(editMenu);
         menuBar.add(helpMenu);
 
-        frame.setJMenuBar(menuBar);
+        setJMenuBar(menuBar);
 
         JPanel panel = new JPanel();
-        frame.add(panel);
+        add(panel);
         placeComponents(panel);
 
         exitMenuItem.addActionListener(new ActionListener() {
@@ -42,14 +49,14 @@ public class MainWindow {
         aboutMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(frame, "Planszowki.");
+                JOptionPane.showMessageDialog(MainWindow.this, "Planszowki.");
             }
         });
 
-        frame.setVisible(true);
+        setVisible(true);
     }
 
-    private static void placeComponents(JPanel panel) {
+    private void placeComponents(JPanel panel) {
         panel.setLayout(null);
 
         JLabel userLabel = new JLabel("Witaj w aplikacji!");
@@ -60,11 +67,16 @@ public class MainWindow {
         loginButton.setBounds(150, 100, 100, 25);
         panel.add(loginButton);
 
-        
-
         JButton closeButton = new JButton("Zamknij");
-        closeButton.setBounds(150, 100, 100, 25);
+        closeButton.setBounds(150, 150, 100, 25);
         panel.add(closeButton);
+
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                controllers.openLoginWindow();
+            }
+        });
 
         closeButton.addActionListener(new ActionListener() {
             @Override
