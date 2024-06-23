@@ -1,77 +1,67 @@
 package src.GUI;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class LoginWindow extends JFrame {
-
-    private JTextField userTextField;
-    private JPasswordField passwordField;
-    private JButton loginButton;
-    private JButton cancelButton;
     private Controllers controllers;
 
     public LoginWindow(Controllers controllers) {
         this.controllers = controllers;
+        createAndShowGUI();
+    }
 
-        // Ustawienia okna
-        setTitle("Login Window");
-        setSize(300, 150);
+    private void createAndShowGUI() {
+        setTitle("Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+        setSize(300, 200);
+        setLocationRelativeTo(null); // Center the window
 
-        // Panel główny
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(3, 2));
+        add(panel);
+        placeComponents(panel);
 
-        // Etykieta użytkownika
-        JLabel userLabel = new JLabel("User:");
+        setVisible(true);
+    }
+
+    private void placeComponents(JPanel panel) {
+        panel.setLayout(null);
+
+        JLabel userLabel = new JLabel("Username:");
+        userLabel.setBounds(10, 20, 80, 25);
         panel.add(userLabel);
 
-        // Pole tekstowe dla użytkownika
-        userTextField = new JTextField(20);
-        panel.add(userTextField);
+        JTextField userText = new JTextField(20);
+        userText.setBounds(100, 20, 165, 25);
+        panel.add(userText);
 
-        // Etykieta hasła
         JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setBounds(10, 50, 80, 25);
         panel.add(passwordLabel);
 
-        // Pole hasła
-        passwordField = new JPasswordField(20);
-        panel.add(passwordField);
+        JPasswordField passwordText = new JPasswordField(20);
+        passwordText.setBounds(100, 50, 165, 25);
+        panel.add(passwordText);
 
-        // Przycisk logowania
-        loginButton = new JButton("Login");
+        JButton loginButton = new JButton("Login");
+        loginButton.setBounds(10, 80, 80, 25);
+        panel.add(loginButton);
+
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String user = userTextField.getText();
-                char[] password = passwordField.getPassword();
-                
-                // Logika logowania (do zaimplementowania)
-                JOptionPane.showMessageDialog(LoginWindow.this,
-                        "User: " + user + "\nPassword: " + new String(password));
-                
-                // Example of interaction with controllers
-                // controllers.login(user, new String(password)); // Implement this method in Controllers
+                // Get user input
+                String username = userText.getText();
+                String password = new String(passwordText.getPassword());
+
+                // Verify login credentials
+                if (controllers.verifyLogin(username, password)) {
+                    controllers.openLoggedInWindow();
+                } else {
+                    JOptionPane.showMessageDialog(LoginWindow.this, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
-        panel.add(loginButton);
-
-        // Przycisk anulowania
-        cancelButton = new JButton("Cancel");
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                controllers.getMainWindow().setVisible(true);
-                setVisible(false);
-            }
-        });
-        panel.add(cancelButton);
-
-        // Dodanie panelu do okna
-        add(panel);
     }
 }
