@@ -1,12 +1,11 @@
 package src;
 import src.GUI.Controllers;
-import src.GUI.MainWindow;
-
+import src.GUI.LoginWindow;
 public class Main {
     public static void main(String[] args) {
         Controllers controllers = new Controllers();
-        MainWindow mainWindow = new MainWindow(controllers);
-        mainWindow.createAndShowGUI();
+        
+        controllers.openLoginWindow();
     }
 }
 

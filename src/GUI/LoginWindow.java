@@ -57,7 +57,8 @@ public class LoginWindow extends JFrame {
 
                 // Verify login credentials
                 if (controllers.verifyLogin(username, password)) {
-                    controllers.openLoggedInWindow();
+                    dispose();
+                    controllers.openMainFrame();
                 } else {
                     JOptionPane.showMessageDialog(LoginWindow.this, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
