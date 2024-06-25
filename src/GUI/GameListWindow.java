@@ -1,37 +1,47 @@
 package src.GUI;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.regex.PatternSyntaxException;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.table.TableRowSorter;
+import src.DatabaseOperations;
 
 public class GameListWindow extends JFrame {
     private Controllers controllers;
+    private DefaultTableModel tableModel;
+    private TableRowSorter<DefaultTableModel> sorter;
 
     public GameListWindow(Controllers controllers) {
         this.controllers = controllers;
         createAndShowGUI();
+        loadGamesFromDatabase();
     }
 
     private void createAndShowGUI() {
         setTitle("Game List");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(1000, 600);
 
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout());
 
         JPanel navbar = controllers.createNavbar(this);
         mainPanel.add(navbar, BorderLayout.NORTH);
 
+        // Content panel to hold all other components
         JPanel contentPanel = new JPanel(new BorderLayout());
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         placeComponents(contentPanel);
 
-        add(mainPanel);
-        setLocationRelativeTo(null);
+        setContentPane(mainPanel);
+        setLocationRelativeTo(null); // Center the window
         setVisible(true);
     }
 
@@ -45,29 +55,40 @@ public class GameListWindow extends JFrame {
         panel.add(searchBar, BorderLayout.NORTH);
 
         // Table
-        String[] columnNames = {"PNG", "NAZWA", "KATEGORIA", "CZAS GRY", "WIEK", "L. graczy", "OPIS", "UWAGI"};
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        String[] columnNames = {"OBRAZ", "NAZWA", "KATEGORIA", "CZAS GRY", "WIEK", "L. graczy", "OPIS", "UWAGI"};
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public Class<?> getColumnClass(int column) {
+                if (column == 0) {
+                    return ImageIcon.class;
+                } else {
+                    return String.class;
+                }
+            }
+        };
         JTable gameTable = new JTable(tableModel);
+        sorter = new TableRowSorter<>(tableModel);
+        gameTable.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(gameTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         // Sort and Filter Panel
         JPanel sortFilterPanel = new JPanel(new GridLayout(1, 2));
 
-        JPanel sortPanel = new JPanel(new GridLayout(5, 1));
+        JPanel sortPanel = new JPanel(new GridLayout(2, 1));
         sortPanel.setBorder(BorderFactory.createTitledBorder("SORTUJ"));
-        sortPanel.add(new JCheckBox("NAZWA"));
-        sortPanel.add(new JCheckBox("DATA WYDANIA"));
-        sortPanel.add(new JCheckBox("CZAS GRY"));
-        sortPanel.add(new JCheckBox("OCENA"));
-        sortPanel.add(new JCheckBox("LICZBA GRACZY"));
+        String[] sortOptions = {"NAZWA", "DATA WYDANIA", "CZAS GRY", "OCENA", "LICZBA GRACZY"};
+        JComboBox<String> sortComboBox = new JComboBox<>(sortOptions);
+        sortPanel.add(new JLabel("Sortuj według:"));
+        sortPanel.add(sortComboBox);
         sortFilterPanel.add(sortPanel);
 
-        JPanel filterPanel = new JPanel(new GridLayout(3, 1));
+        JPanel filterPanel = new JPanel(new GridLayout(2, 1));
         filterPanel.setBorder(BorderFactory.createTitledBorder("FILTRUJ"));
-        filterPanel.add(new JCheckBox("LICZBA GRACZY"));
-        filterPanel.add(new JCheckBox("KATEGORIA WIEKOWA"));
-        filterPanel.add(new JCheckBox("TYP GRY"));
+        String[] filterOptions = {"LICZBA GRACZY", "KATEGORIA WIEKOWA", "TYP GRY"};
+        JComboBox<String> filterComboBox = new JComboBox<>(filterOptions);
+        filterPanel.add(new JLabel("Filtruj według:"));
+        filterPanel.add(filterComboBox);
         sortFilterPanel.add(filterPanel);
 
         panel.add(sortFilterPanel, BorderLayout.EAST);
@@ -80,13 +101,198 @@ public class GameListWindow extends JFrame {
         panel.add(addGamePanel, BorderLayout.SOUTH);
 
         // Add functionality to add game button
-        addGameButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Logic to add a new game
-                Object[] row = {"<PNG>", "New Game", "Strategy", 60, 12, "2-4", "Description", "Remarks"};
-                tableModel.addRow(row);
+        addGameButton.addActionListener(e -> addNewGame());
+
+        // Add functionality to sort and filter
+        sortComboBox.addActionListener(e -> {
+            String selectedOption = (String) sortComboBox.getSelectedItem();
+            sortTable(selectedOption);
+        });
+
+        filterComboBox.addActionListener(e -> {
+            String selectedOption = (String) filterComboBox.getSelectedItem();
+            filterTable(selectedOption);
+        });
+
+        // Search bar functionality
+        searchBar.addActionListener(e -> {
+            String text = searchBar.getText();
+            if (text.trim().length() == 0) {
+                sorter.setRowFilter(null);
+            } else {
+                sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
             }
         });
+    }
+
+    private void loadGamesFromDatabase() {
+        List<Object[]> games = DatabaseOperations.getAllBoardGames();
+
+        for (Object[] game : games) {
+            // Convert image bytes to ImageIcon
+            byte[] imageBytes = (byte[]) game[0];
+            ImageIcon imageIcon = null;
+            if (imageBytes != null) {
+                try {
+                    ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+                    BufferedImage bufferedImage = ImageIO.read(bais);
+                    imageIcon = new ImageIcon(bufferedImage);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            game[0] = imageIcon;
+            tableModel.addRow(game);
+            System.out.println("Added game to table: " + game[1]); // Debugowanie
+        }
+
+        System.out.println("All games loaded into table.");
+    }
+
+    private void sortTable(String sortBy) {
+        int columnIndex = -1;
+        switch (sortBy) {
+            case "NAZWA":
+                columnIndex = 1;
+                break;
+            case "DATA WYDANIA":
+                columnIndex = 2;
+                break;
+            case "CZAS GRY":
+                columnIndex = 3;
+                break;
+            case "OCENA":
+                columnIndex = 4;
+                break;
+            case "LICZBA GRACZY":
+                columnIndex = 5;
+                break;
+        }
+        if (columnIndex != -1) {
+            sorter.setSortKeys(List.of(new RowSorter.SortKey(columnIndex, SortOrder.ASCENDING)));
+        }
+    }
+
+    private void filterTable(String filterBy) {
+        RowFilter<DefaultTableModel, Object> rf = null;
+        try {
+            switch (filterBy) {
+                case "LICZBA GRACZY":
+                    rf = RowFilter.regexFilter(".*", 5); // Adjust the column index as necessary
+                    break;
+                case "KATEGORIA WIEKOWA":
+                    rf = RowFilter.regexFilter(".*", 4); // Adjust the column index as necessary
+                    break;
+                case "TYP GRY":
+                    rf = RowFilter.regexFilter(".*", 2); // Adjust the column index as necessary
+                    break;
+            }
+            sorter.setRowFilter(rf);
+        } catch (PatternSyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addNewGame() {
+        JTextField nameField = new JTextField(20);
+        JTextField categoryField = new JTextField(20);
+        JTextField playTimeField = new JTextField(20);
+        JTextField ageField = new JTextField(20);
+        JTextField playersField = new JTextField(20);
+        JTextField descriptionField = new JTextField(20);
+        JTextField remarksField = new JTextField(20);
+        JFileChooser fileChooser = new JFileChooser();
+
+        JPanel inputPanel = new JPanel(new GridLayout(8, 2));
+        inputPanel.add(new JLabel("Nazwa:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Kategoria:"));
+        inputPanel.add(categoryField);
+        inputPanel.add(new JLabel("Czas gry:"));
+        inputPanel.add(playTimeField);
+        inputPanel.add(new JLabel("Wiek:"));
+        inputPanel.add(ageField);
+        inputPanel.add(new JLabel("Liczba graczy:"));
+        inputPanel.add(playersField);
+        inputPanel.add(new JLabel("Opis:"));
+        inputPanel.add(descriptionField);
+        inputPanel.add(new JLabel("Uwagi:"));
+        inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Obraz (PNG):"));
+        JButton chooseImageButton = new JButton("Wybierz obraz");
+        inputPanel.add(chooseImageButton);
+
+        chooseImageButton.addActionListener(e -> {
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                chooseImageButton.setText(selectedFile.getName());
+                chooseImageButton.putClientProperty("imageFile", selectedFile);
+            }
+        });
+
+        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nową grę", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String name = nameField.getText();
+                String category = categoryField.getText();
+                int playTime = Integer.parseInt(playTimeField.getText());
+                int age = Integer.parseInt(ageField.getText());
+                String players = playersField.getText();
+                String description = descriptionField.getText();
+                String remarks = remarksField.getText();
+                File imageFile = (File) chooseImageButton.getClientProperty("imageFile");
+
+                if (name.isEmpty() || category.isEmpty() || players.isEmpty() || description.isEmpty() || imageFile == null) {
+                    throw new IllegalArgumentException("Wszystkie pola są wymagane!");
+                }
+
+                Object[] row = {imageFile != null ? imageFile.getName() : "<PNG>", name, category, playTime, age, players, description, remarks};
+                tableModel.addRow(row);
+
+                DatabaseOperations.insertBoardGame(name, category, playTime, age, players, description, remarks, imageFile);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Czas gry i wiek muszą być liczbami!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, chooseImageButton);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, chooseImageButton);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania gry: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void addNewGameWithPrefilledData(JTextField nameField, JTextField categoryField, JTextField playTimeField, JTextField ageField, JTextField playersField, JTextField descriptionField, JTextField remarksField, JButton chooseImageButton) {
+        JFileChooser fileChooser = new JFileChooser();
+
+        JPanel inputPanel = new JPanel(new GridLayout(8, 2));
+        inputPanel.add(new JLabel("Nazwa:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Kategoria:"));
+        inputPanel.add(categoryField);
+        inputPanel.add(new JLabel("Czas gry:"));
+        inputPanel.add(playTimeField);
+        inputPanel.add(new JLabel("Wiek:"));
+        inputPanel.add(ageField);
+        inputPanel.add(new JLabel("Liczba graczy:"));
+        inputPanel.add(playersField);
+        inputPanel.add(new JLabel("Opis:"));
+        inputPanel.add(descriptionField);
+        inputPanel.add(new JLabel("Uwagi:"));
+        inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Obraz (PNG):"));
+        inputPanel.add(chooseImageButton);
+
+        chooseImageButton.addActionListener(e -> {
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                chooseImageButton.setText(selectedFile.getName());
+                chooseImageButton.putClientProperty("imageFile", selectedFile);
+            }
+        });
+
+        JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nową grę", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
     }
 }
