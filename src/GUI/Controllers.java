@@ -1,33 +1,62 @@
 package src.GUI;
 
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import src.Utils.PasswordUtils;
 import src.Utils.User;
 
 public class Controllers {
 
-    private MainFrame mainFrame;
+    private MainWindow mainWindow;
+    private LoginWindow loginWindow;
+    private LoggedInWindow loggedInWindow;
+    private UserListWindow userListWindow;
+    private GameListWindow gameListWindow;
+    private HistoryWindow historyWindow;
     private User user;
 
     public Controllers() {
-        // Create a user with username "user" and password "password"
         user = new User("user", "password");
     }
 
-    public void setMainFrame(MainFrame mainFrame) {
-        this.mainFrame = mainFrame;
+    public void setMainWindow(MainWindow mainWindow) {
+        this.mainWindow = mainWindow;
     }
 
-    public MainFrame getMainFrame() {
-        return mainFrame;
+    public MainWindow getMainWindow() {
+        return mainWindow;
+    }
+
+    public void openLoginWindow() {
+        if (loginWindow == null) {
+            loginWindow = new LoginWindow(this);
+        }
+        loginWindow.setVisible(true);
+        if (mainWindow != null) mainWindow.setVisible(false);
+    }
+
+    public void openLoggedInWindow() {
+        if (loggedInWindow == null) {
+            loggedInWindow = new LoggedInWindow(this);
+        }
+        loggedInWindow.setVisible(true);
+        if (loginWindow != null) loginWindow.setVisible(false);
+    }
+
+    public void openGameListWindow() {
+        if (gameListWindow == null) {
+            gameListWindow = new GameListWindow(this);
+        }
+        gameListWindow.setVisible(true);
+        if (loggedInWindow != null) loggedInWindow.setVisible(false);
     }
 
     public boolean verifyLogin(String username, String password) {
         return username.equals(user.getUsername()) && PasswordUtils.verifyPassword(password, user.getPasswordHash());
     }
 
-    public JPanel createNavbar() {
+    public JPanel createNavbar(JFrame currentFrame) {
         JPanel navbar = new JPanel();
 
         JButton userListButton = new JButton("User List");
@@ -36,15 +65,44 @@ public class Controllers {
         JButton generalButton = new JButton("General");
         JButton logoutButton = new JButton("Logout");
 
-        userListButton.addActionListener(e -> mainFrame.showCard("UserList"));
-        gameListButton.addActionListener(e -> mainFrame.showCard("GameList"));
-        historyButton.addActionListener(e -> mainFrame.showCard("History"));
-        generalButton.addActionListener(e -> mainFrame.showCard("LoggedIn"));
+        userListButton.addActionListener(e -> {
+            if (userListWindow == null) {
+                userListWindow = new UserListWindow(this);
+            }
+            userListWindow.setVisible(true);
+            currentFrame.setVisible(false);
+        });
+
+        gameListButton.addActionListener(e -> {
+            if (gameListWindow == null) {
+                gameListWindow = new GameListWindow(this);
+            }
+            gameListWindow.setVisible(true);
+            currentFrame.setVisible(false);
+        });
+
+        historyButton.addActionListener(e -> {
+            if (historyWindow == null) {
+                historyWindow = new HistoryWindow(this);
+            }
+            historyWindow.setVisible(true);
+            currentFrame.setVisible(false);
+        });
+
+        generalButton.addActionListener(e -> {
+            if (loggedInWindow == null) {
+                loggedInWindow = new LoggedInWindow(this);
+            }
+            loggedInWindow.setVisible(true);
+            currentFrame.setVisible(false);
+        });
 
         logoutButton.addActionListener(e -> {
-            // Logout and show the login window
-            mainFrame.dispose();
-            openLoginWindow();
+            if (mainWindow == null) {
+                mainWindow = new MainWindow(this);
+            }
+            mainWindow.setVisible(true);
+            currentFrame.setVisible(false);
         });
 
         navbar.add(userListButton);
@@ -55,20 +113,4 @@ public class Controllers {
 
         return navbar;
     }
-
-    public void openLoginWindow() {
-        if (mainFrame != null) {
-            mainFrame.setVisible(false);
-        }
-        LoginWindow loginWindow = new LoginWindow(this);
-        loginWindow.setVisible(true);
-    }
-
-    public void openMainFrame() {
-        if (mainFrame == null) {
-            mainFrame = new MainFrame(this);
-        }
-        mainFrame.setVisible(true);
-    }
 }
-

@@ -16,7 +16,7 @@ public class LoginWindow extends JFrame {
         setTitle("Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(300, 200);
-        setLocationRelativeTo(null); // Center the window
+        setLocationRelativeTo(null);
 
         JPanel panel = new JPanel();
         add(panel);
@@ -51,14 +51,12 @@ public class LoginWindow extends JFrame {
         loginButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Get user input
                 String username = userText.getText();
                 String password = new String(passwordText.getPassword());
 
-                // Verify login credentials
                 if (controllers.verifyLogin(username, password)) {
+                    controllers.openLoggedInWindow();
                     dispose();
-                    controllers.openMainFrame();
                 } else {
                     JOptionPane.showMessageDialog(LoginWindow.this, "Invalid username or password.", "Error", JOptionPane.ERROR_MESSAGE);
                 }

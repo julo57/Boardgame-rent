@@ -28,7 +28,7 @@ public class LoggedInWindow extends JFrame {
         placeComponents(contentPanel);
 
         add(mainPanel);
-        setLocationRelativeTo(null); // Center the window
+        setLocationRelativeTo(null);
         setVisible(true);
     }
 
