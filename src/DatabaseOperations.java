@@ -75,4 +75,76 @@ public class DatabaseOperations {
             System.out.println(e.getMessage());
         }
     }
+
+    // New methods for rentals
+
+    public static void insertRental(String userName, String gameName, String rentalDate) {
+        String sql = "INSERT INTO rentals(user_name, game_name, rental_date) VALUES(?,?,?)";
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userName);
+            pstmt.setString(2, gameName);
+            pstmt.setString(3, rentalDate);
+
+            pstmt.executeUpdate();
+            System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static List<Object[]> getAllRentals() {
+        String sql = "SELECT id, user_name, game_name, rental_date FROM rentals";
+        List<Object[]> rentals = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getString("user_name"),
+                    rs.getString("game_name"),
+                    rs.getString("rental_date")
+                };
+                rentals.add(row);
+                System.out.println("Loaded rental: " + rs.getString("user_name") + " - " + rs.getString("game_name"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return rentals;
+    }
+
+    public static void deleteRental(int id) {
+        String sql = "DELETE FROM rentals WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+            System.out.println("Usunięto wypożyczenie o id: " + id);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void insertUser(String userName) {
+        String sql = "INSERT INTO users(name) VALUES(?)";
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userName);
+            pstmt.executeUpdate();
+            System.out.println("Dodano użytkownika: " + userName);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }

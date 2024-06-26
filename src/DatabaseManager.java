@@ -31,7 +31,22 @@ public class DatabaseManager {
         }
     }
 
-    public static void main(String[] args) {
-        createTable();
+    public static void createRentalTable() {
+        String url = "jdbc:sqlite:your-database-name.db";
+
+        String sql = "CREATE TABLE IF NOT EXISTS rentals (\n"
+                + "	id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+                + "	user_name TEXT NOT NULL,\n"
+                + "	game_name TEXT NOT NULL,\n"
+                + "	rental_date TEXT NOT NULL\n"
+                + ");";
+
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Table 'rentals' created successfully.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
