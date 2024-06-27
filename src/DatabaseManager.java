@@ -9,8 +9,13 @@ public class DatabaseManager {
 
     private static final String URL = "jdbc:sqlite:database.db";
 
-    public static void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS board_games (\n"
+    public static void createTables() {
+        String createUsersTable = "CREATE TABLE IF NOT EXISTS users (\n"
+                + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+                + " name TEXT NOT NULL\n"
+                + ");";
+
+        String createBoardGamesTable = "CREATE TABLE IF NOT EXISTS board_games (\n"
                 + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                 + " name TEXT NOT NULL,\n"
                 + " category TEXT,\n"
@@ -22,29 +27,20 @@ public class DatabaseManager {
                 + " image BLOB\n"
                 + ");";
 
-        try (Connection conn = DriverManager.getConnection(URL);
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("Table 'board_games' created successfully.");
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static void createRentalTable() {
-        String url = "jdbc:sqlite:your-database-name.db";
-
-        String sql = "CREATE TABLE IF NOT EXISTS rentals (\n"
-                + "	id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-                + "	user_name TEXT NOT NULL,\n"
-                + "	game_name TEXT NOT NULL,\n"
-                + "	rental_date TEXT NOT NULL\n"
+        String createRentalsTable = "CREATE TABLE IF NOT EXISTS rentals (\n"
+                + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+                + " user_name TEXT NOT NULL,\n"
+                + " game_id INTEGER NOT NULL,\n"
+                + " rental_date TEXT NOT NULL,\n"
+                + " FOREIGN KEY (game_id) REFERENCES board_games(id)\n"
                 + ");";
 
-        try (Connection conn = DriverManager.getConnection(url);
+        try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-            System.out.println("Table 'rentals' created successfully.");
+            stmt.execute(createUsersTable);
+            stmt.execute(createBoardGamesTable);
+            stmt.execute(createRentalsTable);
+            System.out.println("Tables 'users', 'board_games', and 'rentals' created successfully.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
