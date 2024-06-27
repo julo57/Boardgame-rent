@@ -53,7 +53,7 @@ public class DatabaseOperations {
                     rs.getString("description"),
                     rs.getString("remarks"),
                     rs.getInt("quantity"),
-                    imageBytes  // Image bytes
+                    imageBytes
                 };
                 games.add(row);
                 System.out.println("Loaded game: " + rs.getString("name")); // Debugowanie
@@ -93,7 +93,7 @@ public class DatabaseOperations {
             pstmt.setInt(4, quantity);
 
             pstmt.executeUpdate();
-            System.out.println("Dodano wypożyczenie: " + userName + " - Game ID: " + gameId);
+            System.out.println("Dodano wypożyczenie: " + userName + " - Game ID: " + gameId + " - Ilość: " + quantity);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }

@@ -3,6 +3,7 @@ package src.GUI;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -119,6 +120,135 @@ public class LoggedInWindow extends JFrame {
     }
 
     private void addNewGame() {
+        JTextField nameField = new JTextField(20);
+        JTextField categoryField = new JTextField(20);
+        JTextField playTimeField = new JTextField(20);
+        JTextField ageField = new JTextField(20);
+        JTextField playersField = new JTextField(20);
+        JTextField descriptionField = new JTextField(20);
+        JTextField remarksField = new JTextField(20);
+        JTextField quantityField = new JTextField(20);
+        JFileChooser fileChooser = new JFileChooser();
+
+        JPanel inputPanel = new JPanel(new GridLayout(9, 2));
+        inputPanel.add(new JLabel("Nazwa:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Kategoria:"));
+        inputPanel.add(categoryField);
+        inputPanel.add(new JLabel("Czas gry:"));
+        inputPanel.add(playTimeField);
+        inputPanel.add(new JLabel("Wiek:"));
+        inputPanel.add(ageField);
+        inputPanel.add(new JLabel("Liczba graczy:"));
+        inputPanel.add(playersField);
+        inputPanel.add(new JLabel("Opis:"));
+        inputPanel.add(descriptionField);
+        inputPanel.add(new JLabel("Uwagi:"));
+        inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
+        inputPanel.add(new JLabel("Obraz (PNG):"));
+        JButton chooseImageButton = new JButton("Wybierz obraz");
+        inputPanel.add(chooseImageButton);
+
+        chooseImageButton.addActionListener(e -> {
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                chooseImageButton.setText(selectedFile.getName());
+                chooseImageButton.putClientProperty("imageFile", selectedFile);
+            }
+        });
+
+        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nową grę", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String name = nameField.getText();
+                String category = categoryField.getText();
+                int playTime = Integer.parseInt(playTimeField.getText());
+                int age = Integer.parseInt(ageField.getText());
+                String players = playersField.getText();
+                String description = descriptionField.getText();
+                String remarks = remarksField.getText();
+                int quantity = Integer.parseInt(quantityField.getText());
+                File imageFile = (File) chooseImageButton.getClientProperty("imageFile");
+
+                if (name.isEmpty() || category.isEmpty() || players.isEmpty() || description.isEmpty() || imageFile == null) {
+                    throw new IllegalArgumentException("Wszystkie pola są wymagane!");
+                }
+
+                Object[] row = {imageFile != null ? imageFile.getName() : "<PNG>", name, category, playTime, age, players, description, remarks, quantity};
+                tableModel.addRow(row);
+
+                DatabaseOperations.insertBoardGame(name, category, playTime, age, players, description, remarks, quantity, imageFile);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Czas gry, wiek i ilość muszą być liczbami!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, quantityField, chooseImageButton);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, quantityField, chooseImageButton);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania gry: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void addNewGameWithPrefilledData(JTextField nameField, JTextField categoryField, JTextField playTimeField, JTextField ageField, JTextField playersField, JTextField descriptionField, JTextField remarksField, JTextField quantityField, JButton chooseImageButton) {
+        JFileChooser fileChooser = new JFileChooser();
+
+        JPanel inputPanel = new JPanel(new GridLayout(9, 2));
+        inputPanel.add(new JLabel("Nazwa:"));
+        inputPanel.add(nameField);
+        inputPanel.add(new JLabel("Kategoria:"));
+        inputPanel.add(categoryField);
+        inputPanel.add(new JLabel("Czas gry:"));
+        inputPanel.add(playTimeField);
+        inputPanel.add(new JLabel("Wiek:"));
+        inputPanel.add(ageField);
+        inputPanel.add(new JLabel("Liczba graczy:"));
+        inputPanel.add(playersField);
+        inputPanel.add(new JLabel("Opis:"));
+        inputPanel.add(descriptionField);
+        inputPanel.add(new JLabel("Uwagi:"));
+        inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
+        inputPanel.add(new JLabel("Obraz (PNG):"));
+        inputPanel.add(chooseImageButton);
+
+        chooseImageButton.addActionListener(e -> {
+            int returnValue = fileChooser.showOpenDialog(null);
+            if (returnValue == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                chooseImageButton.setText(selectedFile.getName());
+                chooseImageButton.putClientProperty("imageFile", selectedFile);
+            }
+        });
+
+        JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nową grę", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private void addNewUser() {
+        JTextField userNameField = new JTextField(20);
+
+        JPanel inputPanel = new JPanel(new GridLayout(2, 2));
+        inputPanel.add(new JLabel("Nazwa użytkownika:"));
+        inputPanel.add(userNameField);
+
+        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowego użytkownika", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            String userName = userNameField.getText();
+
+            if (!userName.isEmpty()) {
+                DatabaseOperations.insertUser(userName);
+                System.out.println("Dodano użytkownika: " + userName);
+            } else {
+                JOptionPane.showMessageDialog(this, "Nazwa użytkownika jest wymagana!", "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void addNewRental() {
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
 
         String[] gameNames = games.stream()
@@ -160,76 +290,6 @@ public class LoggedInWindow extends JFrame {
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Wszystkie pola są wymagane!", "Błąd", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void addNewUser() {
-        JTextField userNameField = new JTextField(20);
-
-        JPanel inputPanel = new JPanel(new GridLayout(2, 2));
-        inputPanel.add(new JLabel("Nazwa użytkownika:"));
-        inputPanel.add(userNameField);
-
-        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowego użytkownika", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (result == JOptionPane.OK_OPTION) {
-            String userName = userNameField.getText();
-
-            if (!userName.isEmpty()) {
-                DatabaseOperations.insertUser(userName);
-                System.out.println("Dodano użytkownika: " + userName);
-            } else {
-                JOptionPane.showMessageDialog(this, "Nazwa użytkownika jest wymagana!", "Błąd", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void addNewRental() {
-        List<Object[]> games = DatabaseOperations.getAllBoardGames();
-        List<Object[]> users = DatabaseOperations.getAllUsers();
-
-        String[] gameNames = games.stream()
-                .map(game -> (String) game[1])
-                .toArray(String[]::new);
-        String[] userNames = users.stream()
-                .map(user -> (String) user[1])
-                .toArray(String[]::new);
-
-        JComboBox<String> gameComboBox = new JComboBox<>(gameNames);
-        JComboBox<String> userComboBox = new JComboBox<>(userNames);
-        JTextField quantityField = new JTextField(20);
-
-        JPanel inputPanel = new JPanel(new GridLayout(4, 2));
-        inputPanel.add(new JLabel("Wybierz grę:"));
-        inputPanel.add(gameComboBox);
-        inputPanel.add(new JLabel("Wybierz użytkownika:"));
-        inputPanel.add(userComboBox);
-        inputPanel.add(new JLabel("Ilość sztuk:"));
-        inputPanel.add(quantityField);
-
-        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowe wypożyczenie", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (result == JOptionPane.OK_OPTION) {
-            String selectedGame = (String) gameComboBox.getSelectedItem();
-            String selectedUser = (String) userComboBox.getSelectedItem();
-            int quantity = Integer.parseInt(quantityField.getText());
-
-            if (selectedGame != null && selectedUser != null && quantity > 0) {
-                // Znajdź ID gry na podstawie nazwy
-                int gameId = games.stream()
-                        .filter(game -> selectedGame.equals(game[1]))
-                        .map(game -> (Integer) game[0])
-                        .findFirst()
-                        .orElse(-1);
-
-                if (gameId != -1) {
-                    String rentalDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-                    DatabaseOperations.insertRental(selectedUser, gameId, rentalDate, quantity);
-                    System.out.println("Dodano wypożyczenie: " + selectedUser + " - " + selectedGame + " o " + rentalDate + " - Ilość: " + quantity);
-                } else {
-                    JOptionPane.showMessageDialog(this, "Nie znaleziono gry w bazie danych.", "Błąd", JOptionPane.ERROR_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Wszystkie pola są wymagane i ilość musi być większa od zera!", "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
