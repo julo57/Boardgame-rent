@@ -9,7 +9,7 @@ import java.util.List;
 
 public class DatabaseOperations {
 
-    public static void insertBoardGame(String name, String category, int playTime, int age, String players, String description, String remarks, int quantity, File imageFile) {
+    public static void insertBoardGame(String name, String category, String playTime, String age, String players, String description, String remarks, String quantity, File imageFile) {
         String sql = "INSERT INTO board_games(name, category, play_time, age, players, description, remarks, quantity, image) VALUES(?,?,?,?,?,?,?,?,?)";
 
         try (Connection conn = DatabaseConnection.connect();
@@ -18,12 +18,12 @@ public class DatabaseOperations {
 
             pstmt.setString(1, name);
             pstmt.setString(2, category);
-            pstmt.setInt(3, playTime);
-            pstmt.setInt(4, age);
+            pstmt.setString(3, playTime);
+            pstmt.setString(4, age);
             pstmt.setString(5, players);
             pstmt.setString(6, description);
             pstmt.setString(7, remarks);
-            pstmt.setInt(8, quantity);
+            pstmt.setString(8, quantity);
             pstmt.setBytes(9, fis.readAllBytes());
 
             pstmt.executeUpdate();
@@ -47,16 +47,16 @@ public class DatabaseOperations {
                     rs.getInt("id"),
                     rs.getString("name"),
                     rs.getString("category"),
-                    rs.getInt("play_time"),
-                    rs.getInt("age"),
+                    rs.getString("play_time"),
+                    rs.getString("age"),
                     rs.getString("players"),
                     rs.getString("description"),
                     rs.getString("remarks"),
-                    rs.getInt("quantity"),
-                    imageBytes
+                    rs.getString("quantity"),
+                    imageBytes  // Image bytes
                 };
                 games.add(row);
-                System.out.println("Loaded game: " + rs.getString("name")); // Debugowanie
+                System.out.println("Loaded game: " + rs.getString("name")); // Debugging
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -81,19 +81,19 @@ public class DatabaseOperations {
 
     // Methods for handling rentals
 
-    public static void insertRental(String userName, int gameId, String rentalDate, int quantity) {
+    public static void insertRental(String userName, String gameId, String rentalDate, String quantity) {
         String sql = "INSERT INTO rentals(user_name, game_id, rental_date, quantity) VALUES(?,?,?,?)";
 
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userName);
-            pstmt.setInt(2, gameId);
+            pstmt.setString(2, gameId);
             pstmt.setString(3, rentalDate);
-            pstmt.setInt(4, quantity);
+            pstmt.setString(4, quantity);
 
             pstmt.executeUpdate();
-            System.out.println("Dodano wypożyczenie: " + userName + " - Game ID: " + gameId + " - Ilość: " + quantity);
+            System.out.println("Dodano wypożyczenie: " + userName + " - Game ID: " + gameId);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -115,7 +115,7 @@ public class DatabaseOperations {
                     rs.getString("user_name"),
                     rs.getString("game_name"),
                     rs.getString("rental_date"),
-                    rs.getInt("quantity")
+                    rs.getString("quantity")
                 };
                 rentals.add(row);
                 System.out.println("Loaded rental: " + rs.getString("user_name") + " - " + rs.getString("game_name"));

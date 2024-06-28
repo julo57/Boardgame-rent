@@ -1,6 +1,8 @@
 package src.GUI;
 
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -39,7 +41,7 @@ public class UserListWindow extends JFrame {
     private void placeComponents(JPanel panel) {
         panel.setLayout(new BorderLayout());
 
-        String[] columnNames = {"ID", "Nazwa Użytkownika", "Nazwa Gry", "Data"};
+        String[] columnNames = {"ID", "Nazwa Użytkownika", "Nazwa Gry", "Data", "Ilość"};
         tableModel = new DefaultTableModel(columnNames, 0);
         JTable rentalTable = new JTable(tableModel);
         JScrollPane scrollPane = new JScrollPane(rentalTable);
@@ -69,43 +71,45 @@ public class UserListWindow extends JFrame {
 
     private void addNewRental() {
         JTextField userNameField = new JTextField(20);
-        JTextField rentalDateField = new JTextField(20);
+        JTextField quantityField = new JTextField(20);
         JComboBox<String> gameComboBox = new JComboBox<>();
-        
+
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
         for (Object[] game : games) {
-            gameComboBox.addItem((String) game[1]);  // Adding game names to the combo box
+            gameComboBox.addItem((String) game[2]);  // Adding game names to the combo box
         }
 
-        JPanel inputPanel = new JPanel(new GridLayout(3, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(4, 2));
         inputPanel.add(new JLabel("Nazwa Użytkownika:"));
         inputPanel.add(userNameField);
         inputPanel.add(new JLabel("Nazwa Gry:"));
         inputPanel.add(gameComboBox);
-        inputPanel.add(new JLabel("Data Wypożyczenia:"));
-        inputPanel.add(rentalDateField);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
+
+        String rentalDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
         int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowe wypożyczenie", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 String userName = userNameField.getText();
                 String gameName = (String) gameComboBox.getSelectedItem();
-                String rentalDate = rentalDateField.getText();
+                String quantity = quantityField.getText();
 
-                if (userName.isEmpty() || gameName == null || rentalDate.isEmpty()) {
+                if (userName.isEmpty() || gameName == null || quantity.isEmpty()) {
                     throw new IllegalArgumentException("Wszystkie pola są wymagane!");
                 }
 
-                int gameId = -1;
+                String gameId = null;
                 for (Object[] game : games) {
-                    if (gameName.equals(game[1])) {
-                        gameId = (int) game[0];
+                    if (gameName.equals(game[2])) {
+                        gameId = String.valueOf(game[0]);
                         break;
                     }
                 }
 
-                DatabaseOperations.insertRental(userName, gameId, rentalDate);
-                Object[] row = {null, userName, gameName, rentalDate};
+                DatabaseOperations.insertRental(userName, gameId, rentalDate, quantity);
+                Object[] row = {null, userName, gameName, rentalDate, quantity};
                 tableModel.addRow(row);
                 System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
             } catch (IllegalArgumentException ex) {

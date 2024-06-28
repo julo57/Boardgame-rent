@@ -55,7 +55,7 @@ public class GameListWindow extends JFrame {
         panel.add(searchBar, BorderLayout.NORTH);
 
         // Table
-        String[] columnNames = {"OBRAZ", "NAZWA", "KATEGORIA", "CZAS GRY", "WIEK", "L. graczy", "OPIS", "UWAGI"};
+        String[] columnNames = {"OBRAZ", "NAZWA", "KATEGORIA", "CZAS GRY", "WIEK", "L. graczy", "OPIS", "UWAGI", "ILOŚĆ"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public Class<?> getColumnClass(int column) {
@@ -130,7 +130,7 @@ public class GameListWindow extends JFrame {
 
         for (Object[] game : games) {
             // Convert image bytes to ImageIcon
-            byte[] imageBytes = (byte[]) game[0];
+            byte[] imageBytes = (byte[]) game[9];
             ImageIcon imageIcon = null;
             if (imageBytes != null) {
                 try {
@@ -201,9 +201,10 @@ public class GameListWindow extends JFrame {
         JTextField playersField = new JTextField(20);
         JTextField descriptionField = new JTextField(20);
         JTextField remarksField = new JTextField(20);
+        JTextField quantityField = new JTextField(20);
         JFileChooser fileChooser = new JFileChooser();
 
-        JPanel inputPanel = new JPanel(new GridLayout(8, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(9, 2));
         inputPanel.add(new JLabel("Nazwa:"));
         inputPanel.add(nameField);
         inputPanel.add(new JLabel("Kategoria:"));
@@ -218,6 +219,8 @@ public class GameListWindow extends JFrame {
         inputPanel.add(descriptionField);
         inputPanel.add(new JLabel("Uwagi:"));
         inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
         inputPanel.add(new JLabel("Obraz (PNG):"));
         JButton chooseImageButton = new JButton("Wybierz obraz");
         inputPanel.add(chooseImageButton);
@@ -236,37 +239,38 @@ public class GameListWindow extends JFrame {
             try {
                 String name = nameField.getText();
                 String category = categoryField.getText();
-                int playTime = Integer.parseInt(playTimeField.getText());
-                int age = Integer.parseInt(ageField.getText());
+                String playTime = playTimeField.getText();
+                String age = ageField.getText();
                 String players = playersField.getText();
                 String description = descriptionField.getText();
                 String remarks = remarksField.getText();
+                String quantity = quantityField.getText();
                 File imageFile = (File) chooseImageButton.getClientProperty("imageFile");
 
                 if (name.isEmpty() || category.isEmpty() || players.isEmpty() || description.isEmpty() || imageFile == null) {
                     throw new IllegalArgumentException("Wszystkie pola są wymagane!");
                 }
 
-                Object[] row = {imageFile != null ? imageFile.getName() : "<PNG>", name, category, playTime, age, players, description, remarks};
+                Object[] row = {imageFile != null ? new ImageIcon(imageFile.getPath()) : "<PNG>", name, category, playTime, age, players, description, remarks, quantity};
                 tableModel.addRow(row);
 
-                DatabaseOperations.insertBoardGame(name, category, playTime, age, players, description, remarks, imageFile);
+                DatabaseOperations.insertBoardGame(name, category, playTime, age, players, description, remarks, quantity, imageFile);
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Czas gry i wiek muszą być liczbami!", "Błąd", JOptionPane.ERROR_MESSAGE);
-                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, chooseImageButton);
+                JOptionPane.showMessageDialog(this, "Czas gry, wiek i ilość muszą być liczbami!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, quantityField, chooseImageButton);
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
-                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, chooseImageButton);
+                addNewGameWithPrefilledData(nameField, categoryField, playTimeField, ageField, playersField, descriptionField, remarksField, quantityField, chooseImageButton);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania gry: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
-    private void addNewGameWithPrefilledData(JTextField nameField, JTextField categoryField, JTextField playTimeField, JTextField ageField, JTextField playersField, JTextField descriptionField, JTextField remarksField, JButton chooseImageButton) {
+    private void addNewGameWithPrefilledData(JTextField nameField, JTextField categoryField, JTextField playTimeField, JTextField ageField, JTextField playersField, JTextField descriptionField, JTextField remarksField, JTextField quantityField, JButton chooseImageButton) {
         JFileChooser fileChooser = new JFileChooser();
 
-        JPanel inputPanel = new JPanel(new GridLayout(8, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(9, 2));
         inputPanel.add(new JLabel("Nazwa:"));
         inputPanel.add(nameField);
         inputPanel.add(new JLabel("Kategoria:"));
@@ -281,6 +285,8 @@ public class GameListWindow extends JFrame {
         inputPanel.add(descriptionField);
         inputPanel.add(new JLabel("Uwagi:"));
         inputPanel.add(remarksField);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
         inputPanel.add(new JLabel("Obraz (PNG):"));
         inputPanel.add(chooseImageButton);
 

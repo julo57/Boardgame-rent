@@ -10,39 +10,83 @@ public class DatabaseManager {
     private static final String URL = "jdbc:sqlite:database.db";
 
     public static void createTables() {
-        String createBoardGamesTable = "CREATE TABLE IF NOT EXISTS board_games (\n"
+        // Drop existing tables
+        dropTables();
+
+        // Create new tables
+        createBoardGamesTable();
+        createUsersTable();
+        createRentalTable();
+    }
+
+    public static void dropTables() {
+        String dropBoardGamesTable = "DROP TABLE IF EXISTS board_games;";
+        String dropUsersTable = "DROP TABLE IF EXISTS users;";
+        String dropRentalsTable = "DROP TABLE IF EXISTS rentals;";
+
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(dropBoardGamesTable);
+            stmt.execute(dropUsersTable);
+            stmt.execute(dropRentalsTable);
+            System.out.println("Existing tables dropped successfully.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void createBoardGamesTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS board_games (\n"
                 + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                 + " name TEXT NOT NULL,\n"
                 + " category TEXT,\n"
-                + " play_time INTEGER,\n"
-                + " age INTEGER,\n"
+                + " play_time TEXT,\n"
+                + " age TEXT,\n"
                 + " players TEXT,\n"
                 + " description TEXT,\n"
                 + " remarks TEXT,\n"
-                + " quantity INTEGER,\n"
+                + " quantity TEXT,\n"
                 + " image BLOB\n"
                 + ");";
 
-        String createUsersTable = "CREATE TABLE IF NOT EXISTS users (\n"
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Table 'board_games' created successfully.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void createUsersTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS users (\n"
                 + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                 + " name TEXT NOT NULL\n"
                 + ");";
 
-        String createRentalsTable = "CREATE TABLE IF NOT EXISTS rentals (\n"
+        try (Connection conn = DriverManager.getConnection(URL);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("Table 'users' created successfully.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void createRentalTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS rentals (\n"
                 + " id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                 + " user_name TEXT NOT NULL,\n"
-                + " game_id INTEGER NOT NULL,\n"
+                + " game_id TEXT NOT NULL,\n"
                 + " rental_date TEXT NOT NULL,\n"
-                + " quantity INTEGER NOT NULL,\n"
+                + " quantity TEXT NOT NULL,\n"
                 + " FOREIGN KEY (game_id) REFERENCES board_games(id)\n"
                 + ");";
 
         try (Connection conn = DriverManager.getConnection(URL);
              Statement stmt = conn.createStatement()) {
-            stmt.execute(createBoardGamesTable);
-            stmt.execute(createUsersTable);
-            stmt.execute(createRentalsTable);
-            System.out.println("Tables 'users', 'board_games', and 'rentals' created successfully.");
+            stmt.execute(sql);
+            System.out.println("Table 'rentals' created successfully.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
