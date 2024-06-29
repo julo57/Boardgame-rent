@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import src.DatabaseOperations;
 
@@ -58,6 +59,14 @@ public class LoggedInWindow extends JFrame {
             public boolean isCellEditable(int row, int column) {
                 return column == 5; // Only the "Akcje" column is editable
             }
+
+            @Override
+            public TableCellRenderer getCellRenderer(int row, int column) {
+                if (column == 4) { // Column for quantity (squares)
+                    return new SquareCellRenderer();
+                }
+                return super.getCellRenderer(row, column);
+            }
         };
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         rentalTable.setRowSorter(sorter);
@@ -76,7 +85,10 @@ public class LoggedInWindow extends JFrame {
         // Add functionality for "Oddaj" button in the "Akcje" column
         rentalTable.getColumnModel().getColumn(5).setCellRenderer((table, value, isSelected, hasFocus, row, column) -> {
             JButton button = new JButton("Oddaj");
-            button.addActionListener(e -> markRentalAsReturned(rentalTable, row));
+            button.addActionListener(e -> {
+                markRentalAsReturned(rentalTable, row);
+                new HistoryWindow(controllers).refreshHistory(); // Refresh history window after returning rental
+            });
             return button;
         });
 
@@ -114,7 +126,7 @@ public class LoggedInWindow extends JFrame {
 
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
         for (Object[] game : games) {
-            gameComboBox.addItem((String) game[1]);  // Adding game names to the combo box
+            gameComboBox.addItem((String) game[2]);  // Adding game names to the combo box
         }
 
         JPanel inputPanel = new JPanel(new GridLayout(3, 2));
@@ -139,7 +151,7 @@ public class LoggedInWindow extends JFrame {
 
                 int gameId = -1;
                 for (Object[] game : games) {
-                    if (gameName.equals(game[1])) {
+                    if (gameName.equals(game[2])) {
                         gameId = (int) game[0];
                         break;
                     }
@@ -154,6 +166,31 @@ public class LoggedInWindow extends JFrame {
                 addNewRental();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania wypożyczenia: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Custom cell renderer to draw green squares for quantity
+    private static class SquareCellRenderer extends JPanel implements TableCellRenderer {
+        private int quantity;
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            quantity = Integer.parseInt(value.toString());
+            return this;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            int squareSize = 10;
+            int padding = 2;
+            int x = padding;
+            int y = (getHeight() - squareSize) / 2;
+            for (int i = 0; i < quantity; i++) {
+                g.setColor(Color.GREEN); // Only green squares
+                g.fillRect(x, y, squareSize, squareSize);
+                x += squareSize + padding;
             }
         }
     }

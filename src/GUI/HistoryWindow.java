@@ -59,4 +59,9 @@ public class HistoryWindow extends JFrame {
 
         System.out.println("All history records loaded into table.");
     }
+
+    public void refreshHistory() {
+        tableModel.setRowCount(0); // Clear the table
+        loadHistoryFromDatabase(); // Reload the data
+    }
 }
