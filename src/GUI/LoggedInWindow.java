@@ -64,13 +64,21 @@ public class LoggedInWindow extends JFrame {
         JScrollPane scrollPane = new JScrollPane(rentalTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Button to mark rentals as returned
+        // Add rental button
         JPanel buttonPanel = new JPanel();
-        JButton returnButton = new JButton("ODDAJ");
-        buttonPanel.add(returnButton);
+        JButton addRentalButton = new JButton("DODAJ WYPOŻYCZENIE");
+        buttonPanel.add(addRentalButton);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        returnButton.addActionListener(e -> markRentalAsReturned(rentalTable));
+        // Add functionality to add rental button
+        addRentalButton.addActionListener(e -> addNewRental());
+
+        // Add functionality for "Oddaj" button in the "Akcje" column
+        rentalTable.getColumnModel().getColumn(5).setCellRenderer((table, value, isSelected, hasFocus, row, column) -> {
+            JButton button = new JButton("Oddaj");
+            button.addActionListener(e -> markRentalAsReturned(rentalTable, row));
+            return button;
+        });
 
         System.out.println("Table components placed."); // Debugging
     }
@@ -79,7 +87,6 @@ public class LoggedInWindow extends JFrame {
         List<Object[]> rentals = DatabaseOperations.getAllRentals();
 
         for (Object[] rental : rentals) {
-            rental[5] = "Oddaj"; // Add "Oddaj" button text to the "Akcje" column
             tableModel.addRow(rental);
             System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]); // Debugging
         }
@@ -87,21 +94,67 @@ public class LoggedInWindow extends JFrame {
         System.out.println("All rentals loaded into table.");
     }
 
-    private void markRentalAsReturned(JTable rentalTable) {
-        int selectedRow = rentalTable.getSelectedRow();
-        if (selectedRow != -1) {
-            String rentalId = tableModel.getValueAt(selectedRow, 0).toString();
-            String returnDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+    private void markRentalAsReturned(JTable rentalTable, int row) {
+        String rentalId = tableModel.getValueAt(row, 0).toString();
+        String returnDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-            // Update the database
-            DatabaseOperations.returnRental(rentalId, returnDate);
+        // Update the database
+        DatabaseOperations.returnRental(rentalId, returnDate);
 
-            // Remove the rental from the table
-            tableModel.removeRow(selectedRow);
+        // Remove the rental from the table
+        tableModel.removeRow(row);
 
-            System.out.println("Rental marked as returned: " + rentalId);
-        } else {
-            JOptionPane.showMessageDialog(this, "Wybierz wypożyczenie do zwrotu!", "Błąd", JOptionPane.ERROR_MESSAGE);
+        System.out.println("Rental marked as returned: " + rentalId);
+    }
+
+    private void addNewRental() {
+        JTextField userNameField = new JTextField(20);
+        JTextField quantityField = new JTextField(20);
+        JComboBox<String> gameComboBox = new JComboBox<>();
+
+        List<Object[]> games = DatabaseOperations.getAllBoardGames();
+        for (Object[] game : games) {
+            gameComboBox.addItem((String) game[1]);  // Adding game names to the combo box
+        }
+
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2));
+        inputPanel.add(new JLabel("Nazwa Użytkownika:"));
+        inputPanel.add(userNameField);
+        inputPanel.add(new JLabel("Nazwa Gry:"));
+        inputPanel.add(gameComboBox);
+        inputPanel.add(new JLabel("Ilość:"));
+        inputPanel.add(quantityField);
+
+        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowe wypożyczenie", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String userName = userNameField.getText();
+                String gameName = (String) gameComboBox.getSelectedItem();
+                String quantity = quantityField.getText();
+                String rentalDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+                if (userName.isEmpty() || gameName == null || quantity.isEmpty()) {
+                    throw new IllegalArgumentException("Wszystkie pola są wymagane!");
+                }
+
+                int gameId = -1;
+                for (Object[] game : games) {
+                    if (gameName.equals(game[1])) {
+                        gameId = (int) game[0];
+                        break;
+                    }
+                }
+
+                DatabaseOperations.insertRental(userName, String.valueOf(gameId), rentalDate, quantity);
+                Object[] row = {null, userName, gameName, rentalDate, quantity, "Oddaj"};
+                tableModel.addRow(row);
+                System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewRental();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania wypożyczenia: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

@@ -79,8 +79,6 @@ public class DatabaseOperations {
         }
     }
 
-    // Methods for handling rentals
-
     public static void insertRental(String userName, String gameId, String rentalDate, String quantity) {
         String sql = "INSERT INTO rentals(user_name, game_id, rental_date, quantity) VALUES(?,?,?,?)";
 
@@ -115,7 +113,8 @@ public class DatabaseOperations {
                     rs.getString("user_name"),
                     rs.getString("game_name"),
                     rs.getString("rental_date"),
-                    rs.getString("quantity")
+                    rs.getString("quantity"),
+                    "Oddaj"  // Button text for actions
                 };
                 rentals.add(row);
                 System.out.println("Loaded rental: " + rs.getString("user_name") + " - " + rs.getString("game_name"));
@@ -141,7 +140,62 @@ public class DatabaseOperations {
         }
     }
 
-    // Methods for handling users
+    public static void returnRental(String rentalId, String returnDate) {
+        String insertHistorySql = "INSERT INTO rental_history (id, user_name, game_id, rental_date, return_date, quantity) "
+                + "SELECT id, user_name, game_id, rental_date, ?, quantity FROM rentals WHERE id = ?";
+        String deleteRentalSql = "DELETE FROM rentals WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement insertStmt = conn.prepareStatement(insertHistorySql);
+             PreparedStatement deleteStmt = conn.prepareStatement(deleteRentalSql)) {
+
+            conn.setAutoCommit(false);
+
+            // Insert into rental_history table
+            insertStmt.setString(1, returnDate);
+            insertStmt.setString(2, rentalId);
+            insertStmt.executeUpdate();
+
+            // Delete from rentals table
+            deleteStmt.setString(1, rentalId);
+            deleteStmt.executeUpdate();
+
+            conn.commit();
+            System.out.println("Rental returned and moved to history: " + rentalId);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static List<Object[]> getAllRentalHistory() {
+        String sql = "SELECT rental_history.id, rental_history.user_name, board_games.name AS game_name, "
+                + "rental_history.rental_date, rental_history.return_date, rental_history.quantity "
+                + "FROM rental_history "
+                + "JOIN board_games ON rental_history.game_id = board_games.id";
+        List<Object[]> history = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Object[] row = {
+                    rs.getInt("id"),
+                    rs.getString("user_name"),
+                    rs.getString("game_name"),
+                    rs.getString("rental_date"),
+                    rs.getString("return_date"),
+                    rs.getString("quantity")
+                };
+                history.add(row);
+                System.out.println("Loaded rental history: " + rs.getString("user_name") + " - " + rs.getString("game_name"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return history;
+    }
 
     public static void insertUser(String userName) {
         String sql = "INSERT INTO users(name) VALUES(?)";
