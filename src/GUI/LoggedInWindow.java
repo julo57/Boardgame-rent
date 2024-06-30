@@ -7,12 +7,16 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import src.DatabaseOperations;
 
 public class LoggedInWindow extends JFrame {
     private Controllers controllers;
     private DefaultTableModel tableModel;
+    private JTable rentalTable; // Make rentalTable a class member
 
     public LoggedInWindow(Controllers controllers) {
         this.controllers = controllers;
@@ -54,7 +58,7 @@ public class LoggedInWindow extends JFrame {
         // Table
         String[] columnNames = {"ID", "Nazwa Użytkownika", "Nazwa Gry", "Data Wypożyczenia", "Ilość", "Akcje"};
         tableModel = new DefaultTableModel(columnNames, 0);
-        JTable rentalTable = new JTable(tableModel) {
+        rentalTable = new JTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 5; // Only the "Akcje" column is editable
@@ -68,6 +72,9 @@ public class LoggedInWindow extends JFrame {
                 return super.getCellRenderer(row, column);
             }
         };
+        rentalTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
+        rentalTable.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox(), rentalTable, controllers));
+
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         rentalTable.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(rentalTable);
@@ -82,16 +89,6 @@ public class LoggedInWindow extends JFrame {
         // Add functionality to add rental button
         addRentalButton.addActionListener(e -> addNewRental());
 
-        // Add functionality for "Oddaj" button in the "Akcje" column
-        rentalTable.getColumnModel().getColumn(5).setCellRenderer((table, value, isSelected, hasFocus, row, column) -> {
-            JButton button = new JButton("Oddaj");
-            button.addActionListener(e -> {
-                markRentalAsReturned(rentalTable, row);
-                new HistoryWindow(controllers).refreshHistory(); // Refresh history window after returning rental
-            });
-            return button;
-        });
-
         System.out.println("Table components placed."); // Debugging
     }
 
@@ -99,6 +96,7 @@ public class LoggedInWindow extends JFrame {
         List<Object[]> rentals = DatabaseOperations.getAllRentals();
 
         for (Object[] rental : rentals) {
+            rental[5] = "Oddaj"; // Add "Oddaj" button text to the "Akcje" column
             tableModel.addRow(rental);
             System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]); // Debugging
         }
@@ -192,6 +190,63 @@ public class LoggedInWindow extends JFrame {
                 g.fillRect(x, y, squareSize, squareSize);
                 x += squareSize + padding;
             }
+        }
+    }
+
+    // Custom button renderer
+    private class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText((value == null) ? "" : value.toString());
+            return this;
+        }
+    }
+
+    // Custom button editor
+    private class ButtonEditor extends DefaultCellEditor {
+        private String label;
+        private boolean clicked;
+        private JTable rentalTable;
+        private Controllers controllers;
+
+        public ButtonEditor(JCheckBox checkBox, JTable rentalTable, Controllers controllers) {
+            super(checkBox);
+            this.rentalTable = rentalTable;
+            this.controllers = controllers;
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            label = (value == null) ? "" : value.toString();
+            JButton button = new JButton(label);
+            button.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    clicked = true;
+                    fireEditingStopped();
+                }
+            });
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            if (clicked) {
+                markRentalAsReturned(rentalTable, rentalTable.getSelectedRow());
+                new HistoryWindow(controllers).refreshHistory(); // Refresh history window after returning rental
+            }
+            clicked = false;
+            return label;
+        }
+
+        @Override
+        public boolean stopCellEditing() {
+            clicked = false;
+            return super.stopCellEditing();
         }
     }
 }
