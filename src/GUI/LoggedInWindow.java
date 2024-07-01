@@ -94,9 +94,9 @@ public class LoggedInWindow extends JFrame {
 
     private void loadRentalsFromDatabase() {
         List<Object[]> rentals = DatabaseOperations.getAllRentals();
+        tableModel.setRowCount(0); // Clear the table before loading new data
 
         for (Object[] rental : rentals) {
-            rental[5] = "Oddaj"; // Add "Oddaj" button text to the "Akcje" column
             tableModel.addRow(rental);
             System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]); // Debugging
         }
@@ -111,10 +111,17 @@ public class LoggedInWindow extends JFrame {
         // Update the database
         DatabaseOperations.returnRental(rentalId, returnDate);
 
-        // Remove the rental from the table
-        tableModel.removeRow(row);
+        // Refresh rentals table
+        loadRentalsFromDatabase();
 
         System.out.println("Rental marked as returned: " + rentalId);
+
+        // Refresh history window
+        for (Window window : Window.getWindows()) {
+            if (window instanceof HistoryWindow) {
+                ((HistoryWindow) window).refreshHistory();
+            }
+        }
     }
 
     private void addNewRental() {
@@ -124,7 +131,7 @@ public class LoggedInWindow extends JFrame {
 
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
         for (Object[] game : games) {
-            gameComboBox.addItem((String) game[2]);  // Adding game names to the combo box
+            gameComboBox.addItem((String) game[1]);  // Adding game names to the combo box
         }
 
         JPanel inputPanel = new JPanel(new GridLayout(3, 2));
@@ -140,25 +147,40 @@ public class LoggedInWindow extends JFrame {
             try {
                 String userName = userNameField.getText();
                 String gameName = (String) gameComboBox.getSelectedItem();
-                String quantity = quantityField.getText();
+                String quantityStr = quantityField.getText();
+                int quantity = Integer.parseInt(quantityStr);
                 String rentalDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-                if (userName.isEmpty() || gameName == null || quantity.isEmpty()) {
+                if (userName.isEmpty() || gameName == null || quantity <= 0) {
                     throw new IllegalArgumentException("Wszystkie pola są wymagane!");
                 }
 
                 int gameId = -1;
+                int gameQuantity = 0;
                 for (Object[] game : games) {
-                    if (gameName.equals(game[2])) {
+                    if (gameName.equals(game[1])) {
                         gameId = (int) game[0];
+                        gameQuantity = Integer.parseInt((String) game[8]);
                         break;
                     }
                 }
 
-                DatabaseOperations.insertRental(userName, String.valueOf(gameId), rentalDate, quantity);
-                Object[] row = {null, userName, gameName, rentalDate, quantity, "Oddaj"};
+                if (quantity > gameQuantity) {
+                    throw new IllegalArgumentException("Nie można wypożyczyć więcej niż dostępna ilość!");
+                }
+
+                // Add new user if not exists
+                DatabaseOperations.insertUserIfNotExists(userName);
+
+                DatabaseOperations.insertRental(userName, String.valueOf(gameId), rentalDate, quantityStr);
+                DatabaseOperations.updateGameQuantity(gameId, gameQuantity - quantity); // Update game quantity in database
+
+                Object[] row = {null, userName, gameName, rentalDate, quantityStr, "Oddaj"};
                 tableModel.addRow(row);
                 System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Ilość musi być liczbą!", "Błąd", JOptionPane.ERROR_MESSAGE);
+                addNewRental();
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
                 addNewRental();
@@ -168,13 +190,24 @@ public class LoggedInWindow extends JFrame {
         }
     }
 
-    // Custom cell renderer to draw green squares for quantity
+    // Custom cell renderer to draw green and red squares for quantity
     private static class SquareCellRenderer extends JPanel implements TableCellRenderer {
-        private int quantity;
+        private int totalQuantity;
+        private int rentedQuantity;
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            quantity = Integer.parseInt(value.toString());
+            int rentedQuantity = 0;
+            try {
+                rentedQuantity = Integer.parseInt(value.toString());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid quantity format");
+            }
+            String gameName = (String) table.getValueAt(row, 2);
+            int gameId = getGameIdByName(gameName);
+            totalQuantity = DatabaseOperations.getGameTotalQuantity(gameId);
+            this.rentedQuantity = rentedQuantity;
+
             return this;
         }
 
@@ -185,11 +218,30 @@ public class LoggedInWindow extends JFrame {
             int padding = 2;
             int x = padding;
             int y = (getHeight() - squareSize) / 2;
-            for (int i = 0; i < quantity; i++) {
-                g.setColor(Color.GREEN); // Only green squares
+
+            // Draw rented (red) squares
+            for (int i = 0; i < rentedQuantity; i++) {
+                g.setColor(Color.RED);
                 g.fillRect(x, y, squareSize, squareSize);
                 x += squareSize + padding;
             }
+
+            // Draw available (green) squares
+            for (int i = 0; i < (totalQuantity - rentedQuantity); i++) {
+                g.setColor(Color.GREEN);
+                g.fillRect(x, y, squareSize, squareSize);
+                x += squareSize + padding;
+            }
+        }
+
+        private int getGameIdByName(String gameName) {
+            List<Object[]> games = DatabaseOperations.getAllBoardGames();
+            for (Object[] game : games) {
+                if (gameName.equals(game[1])) {
+                    return (int) game[0];
+                }
+            }
+            return -1;
         }
     }
 
@@ -237,7 +289,6 @@ public class LoggedInWindow extends JFrame {
         public Object getCellEditorValue() {
             if (clicked) {
                 markRentalAsReturned(rentalTable, rentalTable.getSelectedRow());
-                new HistoryWindow(controllers).refreshHistory(); // Refresh history window after returning rental
             }
             clicked = false;
             return label;

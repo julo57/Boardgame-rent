@@ -104,11 +104,10 @@ public class Controllers {
             mainWindow.setVisible(true);
             currentFrame.setVisible(false);
         });
-
+        navbar.add(generalButton);
         navbar.add(userListButton);
         navbar.add(gameListButton);
         navbar.add(historyButton);
-        navbar.add(generalButton);
         navbar.add(logoutButton);
 
         return navbar;

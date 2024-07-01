@@ -1,8 +1,6 @@
 package src.GUI;
 
 import java.awt.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,7 +13,7 @@ public class UserListWindow extends JFrame {
     public UserListWindow(Controllers controllers) {
         this.controllers = controllers;
         createAndShowGUI();
-        loadRentalsFromDatabase();
+        loadUsersFromDatabase();
     }
 
     private void createAndShowGUI() {
@@ -41,82 +39,59 @@ public class UserListWindow extends JFrame {
     private void placeComponents(JPanel panel) {
         panel.setLayout(new BorderLayout());
 
-        String[] columnNames = {"ID", "Nazwa Użytkownika", "Nazwa Gry", "Data", "Ilość"};
+        String[] columnNames = {"ID", "Nazwa Użytkownika"};
         tableModel = new DefaultTableModel(columnNames, 0);
-        JTable rentalTable = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(rentalTable);
+        JTable userTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(userTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel addUserPanel = new JPanel();
-        JButton addUserButton = new JButton("Dodaj Wypożyczenie");
+        JButton addUserButton = new JButton("Dodaj Użytkownika");
         addUserButton.setPreferredSize(new Dimension(200, 30));
         addUserPanel.add(addUserButton);
         panel.add(addUserPanel, BorderLayout.SOUTH);
 
-        addUserButton.addActionListener(e -> addNewRental());
+        addUserButton.addActionListener(e -> addNewUser());
 
         System.out.println("Table components placed.");
     }
 
-    private void loadRentalsFromDatabase() {
-        List<Object[]> rentals = DatabaseOperations.getAllRentals();
+    private void loadUsersFromDatabase() {
+        List<Object[]> users = DatabaseOperations.getAllUsers();
 
-        for (Object[] rental : rentals) {
-            tableModel.addRow(rental);
-            System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]);
+        for (Object[] user : users) {
+            tableModel.addRow(user);
+            System.out.println("Added user to table: " + user[1]);
         }
 
-        System.out.println("All rentals loaded into table.");
+        System.out.println("All users loaded into table.");
     }
 
-    private void addNewRental() {
+    private void addNewUser() {
         JTextField userNameField = new JTextField(20);
-        JTextField quantityField = new JTextField(20);
-        JComboBox<String> gameComboBox = new JComboBox<>();
 
-        List<Object[]> games = DatabaseOperations.getAllBoardGames();
-        for (Object[] game : games) {
-            gameComboBox.addItem((String) game[2]);  // Adding game names to the combo box
-        }
-
-        JPanel inputPanel = new JPanel(new GridLayout(4, 2));
+        JPanel inputPanel = new JPanel(new GridLayout(2, 2));
         inputPanel.add(new JLabel("Nazwa Użytkownika:"));
         inputPanel.add(userNameField);
-        inputPanel.add(new JLabel("Nazwa Gry:"));
-        inputPanel.add(gameComboBox);
-        inputPanel.add(new JLabel("Ilość:"));
-        inputPanel.add(quantityField);
 
-        String rentalDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-
-        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowe wypożyczenie", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(null, inputPanel, "Dodaj nowego użytkownika", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             try {
                 String userName = userNameField.getText();
-                String gameName = (String) gameComboBox.getSelectedItem();
-                String quantity = quantityField.getText();
 
-                if (userName.isEmpty() || gameName == null || quantity.isEmpty()) {
-                    throw new IllegalArgumentException("Wszystkie pola są wymagane!");
+                if (userName.isEmpty()) {
+                    throw new IllegalArgumentException("Nazwa użytkownika jest wymagana!");
                 }
 
-                String gameId = null;
-                for (Object[] game : games) {
-                    if (gameName.equals(game[2])) {
-                        gameId = String.valueOf(game[0]);
-                        break;
-                    }
-                }
-
-                DatabaseOperations.insertRental(userName, gameId, rentalDate, quantity);
-                Object[] row = {null, userName, gameName, rentalDate, quantity};
+                DatabaseOperations.insertUser(userName);
+                Object[] row = {null, userName};
                 tableModel.addRow(row);
-                System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
+                System.out.println("Dodano użytkownika: " + userName);
             } catch (IllegalArgumentException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
-                addNewRental();
+                addNewUser();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania wypożyczenia: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania użytkownika: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

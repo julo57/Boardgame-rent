@@ -11,7 +11,7 @@ public class DatabaseManager {
 
     public static void createTables() {
         // Drop existing tables
-        
+        dropTables();
 
         // Create new tables
         createBoardGamesTable();
@@ -49,6 +49,7 @@ public class DatabaseManager {
                 + " description TEXT,\n"
                 + " remarks TEXT,\n"
                 + " quantity TEXT,\n"
+                + " total_quantity TEXT,\n"
                 + " image BLOB\n"
                 + ");";
 
