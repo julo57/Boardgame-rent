@@ -22,11 +22,13 @@ public class UserListWindow extends JFrame {
         setSize(800, 600);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 245));
 
         JPanel navbar = controllers.createNavbar(this);
         mainPanel.add(navbar, BorderLayout.NORTH);
 
         JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(new Color(245, 245, 245));
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         placeComponents(contentPanel);
@@ -42,12 +44,18 @@ public class UserListWindow extends JFrame {
         String[] columnNames = {"ID", "Nazwa Użytkownika"};
         tableModel = new DefaultTableModel(columnNames, 0);
         JTable userTable = new JTable(tableModel);
+        userTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        userTable.setRowHeight(30);
         JScrollPane scrollPane = new JScrollPane(userTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel addUserPanel = new JPanel();
+        addUserPanel.setBackground(new Color(245, 245, 245));
         JButton addUserButton = new JButton("Dodaj Użytkownika");
         addUserButton.setPreferredSize(new Dimension(200, 30));
+        addUserButton.setBackground(new Color(100, 149, 237));
+        addUserButton.setForeground(Color.WHITE);
+        addUserButton.setFocusPainted(false);
         addUserPanel.add(addUserButton);
         panel.add(addUserPanel, BorderLayout.SOUTH);
 
@@ -58,7 +66,6 @@ public class UserListWindow extends JFrame {
 
     private void loadUsersFromDatabase() {
         List<Object[]> users = DatabaseOperations.getAllUsers();
-        tableModel.setRowCount(0); // Clear the table before loading new data
 
         for (Object[] user : users) {
             tableModel.addRow(user);
@@ -84,7 +91,8 @@ public class UserListWindow extends JFrame {
                     throw new IllegalArgumentException("Nazwa użytkownika jest wymagana!");
                 }
 
-                int userId = DatabaseOperations.insertUserIfNotExists(userName);
+                DatabaseOperations.insertUser(userName);
+                int userId = DatabaseOperations.getUserIdByName(userName); // Ensure this method exists in DatabaseOperations
                 Object[] row = {userId, userName};
                 tableModel.addRow(row);
                 System.out.println("Dodano użytkownika: " + userName);
@@ -95,9 +103,5 @@ public class UserListWindow extends JFrame {
                 JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania użytkownika: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }
-
-    public void refreshUserList() {
-        loadUsersFromDatabase();
     }
 }

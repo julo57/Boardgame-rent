@@ -30,11 +30,13 @@ public class LoggedInWindow extends JFrame {
         setSize(800, 600); // Adjusted size for better table visibility
 
         JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 245));
 
         JPanel navbar = controllers.createNavbar(this);
         mainPanel.add(navbar, BorderLayout.NORTH);
 
         JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(new Color(245, 245, 245));
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         placeComponents(contentPanel);
@@ -53,6 +55,8 @@ public class LoggedInWindow extends JFrame {
         JTextField searchBar = new JTextField("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
         searchBar.setHorizontalAlignment(JTextField.CENTER);
         searchBar.setPreferredSize(new Dimension(1000, 30));
+        searchBar.setFont(new Font("Arial", Font.PLAIN, 14));
+        searchBar.setForeground(Color.GRAY);
         panel.add(searchBar, BorderLayout.NORTH);
 
         // Table
@@ -74,6 +78,8 @@ public class LoggedInWindow extends JFrame {
         };
         rentalTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonRenderer());
         rentalTable.getColumnModel().getColumn(5).setCellEditor(new ButtonEditor(new JCheckBox(), rentalTable, controllers));
+        rentalTable.setRowHeight(30);
+        rentalTable.setFont(new Font("Arial", Font.PLAIN, 14));
 
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         rentalTable.setRowSorter(sorter);
@@ -82,7 +88,12 @@ public class LoggedInWindow extends JFrame {
 
         // Add rental button
         JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(245, 245, 245));
         JButton addRentalButton = new JButton("DODAJ WYPOŻYCZENIE");
+        addRentalButton.setPreferredSize(new Dimension(200, 30));
+        addRentalButton.setBackground(new Color(100, 149, 237));
+        addRentalButton.setForeground(Color.WHITE);
+        addRentalButton.setFocusPainted(false);
         buttonPanel.add(addRentalButton);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -176,14 +187,6 @@ public class LoggedInWindow extends JFrame {
                 DatabaseOperations.updateGameQuantity(gameId, gameQuantity - quantity); // Update game quantity in database
 
                 loadRentalsFromDatabase();
-
-                // Refresh user list window
-                for (Window window : Window.getWindows()) {
-                    if (window instanceof UserListWindow) {
-                        ((UserListWindow) window).refreshUserList();
-                    }
-                }
-
                 System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Ilość musi być liczbą!", "Błąd", JOptionPane.ERROR_MESSAGE);

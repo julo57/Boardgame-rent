@@ -30,12 +30,14 @@ public class GameListWindow extends JFrame {
         setSize(1000, 600);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 245));
 
         JPanel navbar = controllers.createNavbar(this);
         mainPanel.add(navbar, BorderLayout.NORTH);
 
         // Content panel to hold all other components
         JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(new Color(245, 245, 245));
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         placeComponents(contentPanel);
@@ -52,6 +54,22 @@ public class GameListWindow extends JFrame {
         JTextField searchBar = new JTextField("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
         searchBar.setHorizontalAlignment(JTextField.CENTER);
         searchBar.setPreferredSize(new Dimension(1000, 30));
+        searchBar.setFont(new Font("Arial", Font.PLAIN, 14));
+        searchBar.setForeground(Color.GRAY);
+        searchBar.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (searchBar.getText().equals("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)")) {
+                    searchBar.setText("");
+                    searchBar.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (searchBar.getText().isEmpty()) {
+                    searchBar.setForeground(Color.GRAY);
+                    searchBar.setText("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
+                }
+            }
+        });
         panel.add(searchBar, BorderLayout.NORTH);
 
         // Table
@@ -67,36 +85,59 @@ public class GameListWindow extends JFrame {
             }
         };
         JTable gameTable = new JTable(tableModel);
+        gameTable.setRowHeight(60);
+        gameTable.setFont(new Font("Arial", Font.PLAIN, 14));
         sorter = new TableRowSorter<>(tableModel);
         gameTable.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(gameTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         // Sort and Filter Panel
-        JPanel sortFilterPanel = new JPanel(new GridLayout(1, 2));
+        JPanel sortFilterPanel = new JPanel(new GridLayout(2, 1));
+        sortFilterPanel.setBackground(new Color(245, 245, 245));
 
-        JPanel sortPanel = new JPanel(new GridLayout(2, 1));
+        JPanel sortPanel = new JPanel(new GridLayout(3, 1));
         sortPanel.setBorder(BorderFactory.createTitledBorder("SORTUJ"));
-        String[] sortOptions = {"NAZWA", "DATA WYDANIA", "CZAS GRY", "OCENA", "LICZBA GRACZY"};
+        sortPanel.setBackground(new Color(245, 245, 245));
+        JLabel sortLabel = new JLabel("Sortuj według:");
+        sortLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        String[] sortOptions = {"NAZWA", "CZAS GRY", "LICZBA GRACZY"};
         JComboBox<String> sortComboBox = new JComboBox<>(sortOptions);
-        sortPanel.add(new JLabel("Sortuj według:"));
+        JButton sortButton = new JButton("Sortuj");
+        sortButton.setBackground(new Color(100, 149, 237));
+        sortButton.setForeground(Color.WHITE);
+        sortButton.setFocusPainted(false);
+        sortPanel.add(sortLabel);
         sortPanel.add(sortComboBox);
+        sortPanel.add(sortButton);
         sortFilterPanel.add(sortPanel);
 
-        JPanel filterPanel = new JPanel(new GridLayout(2, 1));
+        JPanel filterPanel = new JPanel(new GridLayout(3, 1));
         filterPanel.setBorder(BorderFactory.createTitledBorder("FILTRUJ"));
+        filterPanel.setBackground(new Color(245, 245, 245));
+        JLabel filterLabel = new JLabel("Filtruj według:");
+        filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
         String[] filterOptions = {"LICZBA GRACZY", "KATEGORIA WIEKOWA", "TYP GRY"};
         JComboBox<String> filterComboBox = new JComboBox<>(filterOptions);
-        filterPanel.add(new JLabel("Filtruj według:"));
+        JButton filterButton = new JButton("Filtruj");
+        filterButton.setBackground(new Color(100, 149, 237));
+        filterButton.setForeground(Color.WHITE);
+        filterButton.setFocusPainted(false);
+        filterPanel.add(filterLabel);
         filterPanel.add(filterComboBox);
+        filterPanel.add(filterButton);
         sortFilterPanel.add(filterPanel);
 
         panel.add(sortFilterPanel, BorderLayout.EAST);
 
         // Add Game Button
         JPanel addGamePanel = new JPanel();
+        addGamePanel.setBackground(new Color(245, 245, 245));
         JButton addGameButton = new JButton("DODAJ GRĘ");
         addGameButton.setPreferredSize(new Dimension(150, 30));
+        addGameButton.setBackground(new Color(100, 149, 237));
+        addGameButton.setForeground(Color.WHITE);
+        addGameButton.setFocusPainted(false);
         addGamePanel.add(addGameButton);
         panel.add(addGamePanel, BorderLayout.SOUTH);
 
@@ -104,12 +145,12 @@ public class GameListWindow extends JFrame {
         addGameButton.addActionListener(e -> addNewGame());
 
         // Add functionality to sort and filter
-        sortComboBox.addActionListener(e -> {
+        sortButton.addActionListener(e -> {
             String selectedOption = (String) sortComboBox.getSelectedItem();
             sortTable(selectedOption);
         });
 
-        filterComboBox.addActionListener(e -> {
+        filterButton.addActionListener(e -> {
             String selectedOption = (String) filterComboBox.getSelectedItem();
             filterTable(selectedOption);
         });
@@ -157,14 +198,8 @@ public class GameListWindow extends JFrame {
             case "NAZWA":
                 columnIndex = 1;
                 break;
-            case "DATA WYDANIA":
-                columnIndex = 2;
-                break;
             case "CZAS GRY":
                 columnIndex = 3;
-                break;
-            case "OCENA":
-                columnIndex = 4;
                 break;
             case "LICZBA GRACZY":
                 columnIndex = 5;

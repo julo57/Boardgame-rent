@@ -213,32 +213,24 @@ public class DatabaseOperations {
         }
     }
 
-    public static int insertUserIfNotExists(String userName) {
+    public static void insertUserIfNotExists(String userName) {
         String sqlCheck = "SELECT id FROM users WHERE name = ?";
         String sqlInsert = "INSERT INTO users(name) VALUES(?)";
-        int userId = -1;
 
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement pstmtCheck = conn.prepareStatement(sqlCheck);
-             PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert)) {
 
             pstmtCheck.setString(1, userName);
             ResultSet rs = pstmtCheck.executeQuery();
             if (!rs.next()) {
                 pstmtInsert.setString(1, userName);
                 pstmtInsert.executeUpdate();
-                ResultSet generatedKeys = pstmtInsert.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    userId = generatedKeys.getInt(1);
-                }
                 System.out.println("Dodano użytkownika: " + userName);
-            } else {
-                userId = rs.getInt("id");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-        return userId;
     }
 
     public static List<Object[]> getAllUsers() {
@@ -302,7 +294,7 @@ public class DatabaseOperations {
             pstmt.setInt(1, gameId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("total_quantity");
+                return Integer.parseInt(rs.getString("total_quantity"));
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -318,11 +310,27 @@ public class DatabaseOperations {
             pstmt.setInt(1, gameId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("quantity");
+                return Integer.parseInt(rs.getString("quantity"));
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
         return 0;
+    }
+    
+    public static int getUserIdByName(String userName) {
+        String sql = "SELECT id FROM users WHERE name = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userName);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return -1;
     }
 }

@@ -17,9 +17,10 @@ public class MainWindow extends JFrame {
         setSize(800, 600);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(Color.WHITE);
 
-        
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        JPanel contentPanel = new JPanel(null);
+        contentPanel.setBackground(Color.WHITE);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
 
         placeComponents(contentPanel);
@@ -30,9 +31,8 @@ public class MainWindow extends JFrame {
     }
 
     private void placeComponents(JPanel panel) {
-        panel.setLayout(null);
-
         JLabel userLabel = new JLabel("Witaj w aplikacji!");
+        userLabel.setFont(new Font("Arial", Font.BOLD, 18));
         userLabel.setBounds(300, 50, 200, 25);
         panel.add(userLabel);
 
