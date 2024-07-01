@@ -105,7 +105,7 @@ public class LoggedInWindow extends JFrame {
     }
 
     private void markRentalAsReturned(JTable rentalTable, int row) {
-        String rentalId = tableModel.getValueAt(row, 0).toString();
+        String rentalId = tableModel.getValueAt(row, 0) != null ? tableModel.getValueAt(row, 0).toString() : "";
         String returnDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
         // Update the database
@@ -175,8 +175,15 @@ public class LoggedInWindow extends JFrame {
                 DatabaseOperations.insertRental(userName, String.valueOf(gameId), rentalDate, quantityStr);
                 DatabaseOperations.updateGameQuantity(gameId, gameQuantity - quantity); // Update game quantity in database
 
-                Object[] row = {null, userName, gameName, rentalDate, quantityStr, "Oddaj"};
-                tableModel.addRow(row);
+                loadRentalsFromDatabase();
+
+                // Refresh user list window
+                for (Window window : Window.getWindows()) {
+                    if (window instanceof UserListWindow) {
+                        ((UserListWindow) window).refreshUserList();
+                    }
+                }
+
                 System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Ilość musi być liczbą!", "Błąd", JOptionPane.ERROR_MESSAGE);
@@ -197,16 +204,14 @@ public class LoggedInWindow extends JFrame {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            int rentedQuantity = 0;
-            try {
+            if (value != null) {
                 rentedQuantity = Integer.parseInt(value.toString());
-            } catch (NumberFormatException e) {
-                System.out.println("Invalid quantity format");
+            } else {
+                rentedQuantity = 0;
             }
-            String gameName = (String) table.getValueAt(row, 2);
+            String gameName = table.getValueAt(row, 2) != null ? table.getValueAt(row, 2).toString() : "";
             int gameId = getGameIdByName(gameName);
             totalQuantity = DatabaseOperations.getGameTotalQuantity(gameId);
-            this.rentedQuantity = rentedQuantity;
 
             return this;
         }

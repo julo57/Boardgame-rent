@@ -58,6 +58,7 @@ public class UserListWindow extends JFrame {
 
     private void loadUsersFromDatabase() {
         List<Object[]> users = DatabaseOperations.getAllUsers();
+        tableModel.setRowCount(0); // Clear the table before loading new data
 
         for (Object[] user : users) {
             tableModel.addRow(user);
@@ -83,8 +84,8 @@ public class UserListWindow extends JFrame {
                     throw new IllegalArgumentException("Nazwa użytkownika jest wymagana!");
                 }
 
-                DatabaseOperations.insertUser(userName);
-                Object[] row = {null, userName};
+                int userId = DatabaseOperations.insertUserIfNotExists(userName);
+                Object[] row = {userId, userName};
                 tableModel.addRow(row);
                 System.out.println("Dodano użytkownika: " + userName);
             } catch (IllegalArgumentException ex) {
@@ -94,5 +95,9 @@ public class UserListWindow extends JFrame {
                 JOptionPane.showMessageDialog(this, "Wystąpił błąd podczas dodawania użytkownika: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    public void refreshUserList() {
+        loadUsersFromDatabase();
     }
 }

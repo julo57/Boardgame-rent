@@ -130,20 +130,22 @@ public class GameListWindow extends JFrame {
 
         for (Object[] game : games) {
             // Convert image bytes to ImageIcon
-            byte[] imageBytes = (byte[]) game[9];
             ImageIcon imageIcon = null;
-            if (imageBytes != null) {
-                try {
-                    ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
-                    BufferedImage bufferedImage = ImageIO.read(bais);
-                    imageIcon = new ImageIcon(bufferedImage);
-                } catch (IOException e) {
-                    e.printStackTrace();
+            if (game[10] instanceof byte[]) {
+                byte[] imageBytes = (byte[]) game[10];
+                if (imageBytes != null) {
+                    try {
+                        ByteArrayInputStream bais = new ByteArrayInputStream(imageBytes);
+                        BufferedImage bufferedImage = ImageIO.read(bais);
+                        imageIcon = new ImageIcon(bufferedImage);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-            game[0] = imageIcon;
-            tableModel.addRow(game);
-            System.out.println("Added game to table: " + game[1]); // Debugowanie
+            Object[] row = {imageIcon, game[1], game[2], game[3], game[4], game[5], game[6], game[7], game[8]};
+            tableModel.addRow(row);
+            System.out.println("Added game to table: " + game[1]); // Debugging
         }
 
         System.out.println("All games loaded into table.");

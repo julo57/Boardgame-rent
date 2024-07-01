@@ -213,6 +213,34 @@ public class DatabaseOperations {
         }
     }
 
+    public static int insertUserIfNotExists(String userName) {
+        String sqlCheck = "SELECT id FROM users WHERE name = ?";
+        String sqlInsert = "INSERT INTO users(name) VALUES(?)";
+        int userId = -1;
+
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmtCheck = conn.prepareStatement(sqlCheck);
+             PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmtCheck.setString(1, userName);
+            ResultSet rs = pstmtCheck.executeQuery();
+            if (!rs.next()) {
+                pstmtInsert.setString(1, userName);
+                pstmtInsert.executeUpdate();
+                ResultSet generatedKeys = pstmtInsert.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    userId = generatedKeys.getInt(1);
+                }
+                System.out.println("Dodano użytkownika: " + userName);
+            } else {
+                userId = rs.getInt("id");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return userId;
+    }
+
     public static List<Object[]> getAllUsers() {
         String sql = "SELECT id, name FROM users";
         List<Object[]> users = new ArrayList<>();
@@ -236,70 +264,20 @@ public class DatabaseOperations {
         return users;
     }
 
-    public static void deleteUser(int id) {
-        String sql = "DELETE FROM users WHERE id = ?";
-
+    public static int getGameIdByName(String gameName) {
+        String sql = "SELECT id FROM board_games WHERE name = ?";
         try (Connection conn = DatabaseConnection.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setInt(1, id);
-            pstmt.executeUpdate();
-            System.out.println("Usunięto użytkownika o id: " + id);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static void insertUserIfNotExists(String userName) {
-        String sqlCheck = "SELECT id FROM users WHERE name = ?";
-        String sqlInsert = "INSERT INTO users(name) VALUES(?)";
-
-        try (Connection conn = DatabaseConnection.connect();
-             PreparedStatement pstmtCheck = conn.prepareStatement(sqlCheck);
-             PreparedStatement pstmtInsert = conn.prepareStatement(sqlInsert)) {
-
-            pstmtCheck.setString(1, userName);
-            ResultSet rs = pstmtCheck.executeQuery();
-            if (!rs.next()) {
-                pstmtInsert.setString(1, userName);
-                pstmtInsert.executeUpdate();
-                System.out.println("Dodano użytkownika: " + userName);
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static int getGameQuantity(int gameId) {
-        String sql = "SELECT quantity FROM board_games WHERE id = ?";
-        try (Connection conn = DatabaseConnection.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, gameId);
+            pstmt.setString(1, gameName);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return Integer.parseInt(rs.getString("quantity"));
+                return rs.getInt("id");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
-        return 0;
-    }
-
-    public static int getGameTotalQuantity(int gameId) {
-        String sql = "SELECT total_quantity FROM board_games WHERE id = ?";
-        try (Connection conn = DatabaseConnection.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, gameId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return Integer.parseInt(rs.getString("total_quantity"));
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return 0;
+        return -1;
     }
 
     public static void updateGameQuantity(int gameId, int newQuantity) {
@@ -314,5 +292,37 @@ public class DatabaseOperations {
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    public static int getGameTotalQuantity(int gameId) {
+        String sql = "SELECT total_quantity FROM board_games WHERE id = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, gameId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("total_quantity");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return 0;
+    }
+
+    public static int getGameQuantity(int gameId) {
+        String sql = "SELECT quantity FROM board_games WHERE id = ?";
+        try (Connection conn = DatabaseConnection.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, gameId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("quantity");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return 0;
     }
 }

@@ -11,7 +11,7 @@ public class DatabaseManager {
 
     public static void createTables() {
         // Drop existing tables
-        dropTables();
+     
 
         // Create new tables
         createBoardGamesTable();
