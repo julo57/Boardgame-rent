@@ -66,6 +66,9 @@ public class Controllers {
         JButton logoutButton = new JButton("Logout");
 
         userListButton.addActionListener(e -> {
+            if (currentFrame instanceof UserListWindow) {
+                return;
+            }
             if (userListWindow == null) {
                 userListWindow = new UserListWindow(this);
             }
@@ -74,6 +77,9 @@ public class Controllers {
         });
 
         gameListButton.addActionListener(e -> {
+            if (currentFrame instanceof GameListWindow) {
+                return;
+            }
             if (gameListWindow == null) {
                 gameListWindow = new GameListWindow(this);
             }
@@ -82,6 +88,9 @@ public class Controllers {
         });
 
         historyButton.addActionListener(e -> {
+            if (currentFrame instanceof HistoryWindow) {
+                return;
+            }
             if (historyWindow == null) {
                 historyWindow = new HistoryWindow(this);
             }
@@ -90,6 +99,9 @@ public class Controllers {
         });
 
         generalButton.addActionListener(e -> {
+            if (currentFrame instanceof LoggedInWindow) {
+                return;
+            }
             if (loggedInWindow == null) {
                 loggedInWindow = new LoggedInWindow(this);
             }
@@ -98,12 +110,16 @@ public class Controllers {
         });
 
         logoutButton.addActionListener(e -> {
+            if (currentFrame instanceof MainWindow) {
+                return;
+            }
             if (mainWindow == null) {
                 mainWindow = new MainWindow(this);
             }
             mainWindow.setVisible(true);
             currentFrame.setVisible(false);
         });
+
         navbar.add(generalButton);
         navbar.add(userListButton);
         navbar.add(gameListButton);

@@ -64,8 +64,9 @@ public class UserListWindow extends JFrame {
         System.out.println("Table components placed.");
     }
 
-    private void loadUsersFromDatabase() {
+    public void loadUsersFromDatabase() {
         List<Object[]> users = DatabaseOperations.getAllUsers();
+        tableModel.setRowCount(0); // Clear the table before loading new data
 
         for (Object[] user : users) {
             tableModel.addRow(user);

@@ -12,7 +12,7 @@ public class DatabaseManager {
     public static void createTables() {
         // Drop existing tables
      
-
+        
         // Create new tables
         createBoardGamesTable();
         createUsersTable();

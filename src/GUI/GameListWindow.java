@@ -1,6 +1,10 @@
 package src.GUI;
 
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -17,6 +21,8 @@ public class GameListWindow extends JFrame {
     private Controllers controllers;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> sorter;
+    private JTable gameTable; // Move declaration to class level
+    private JTextField searchBar;
 
     public GameListWindow(Controllers controllers) {
         this.controllers = controllers;
@@ -35,7 +41,6 @@ public class GameListWindow extends JFrame {
         JPanel navbar = controllers.createNavbar(this);
         mainPanel.add(navbar, BorderLayout.NORTH);
 
-        // Content panel to hold all other components
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(new Color(245, 245, 245));
         mainPanel.add(contentPanel, BorderLayout.CENTER);
@@ -50,10 +55,12 @@ public class GameListWindow extends JFrame {
     private void placeComponents(JPanel panel) {
         panel.setLayout(new BorderLayout());
 
+        JPanel searchPanel = new JPanel(new BorderLayout());
+
         // Search Bar
-        JTextField searchBar = new JTextField("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
+        searchBar = new JTextField("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
         searchBar.setHorizontalAlignment(JTextField.CENTER);
-        searchBar.setPreferredSize(new Dimension(1000, 30));
+        searchBar.setPreferredSize(new Dimension(800, 30));
         searchBar.setFont(new Font("Arial", Font.PLAIN, 14));
         searchBar.setForeground(Color.GRAY);
         searchBar.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -63,14 +70,34 @@ public class GameListWindow extends JFrame {
                     searchBar.setForeground(Color.BLACK);
                 }
             }
+
             public void focusLost(java.awt.event.FocusEvent evt) {
                 if (searchBar.getText().isEmpty()) {
                     searchBar.setForeground(Color.GRAY);
                     searchBar.setText("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
+                    sorter.setRowFilter(null); // Show all rows if search bar is empty
                 }
             }
         });
-        panel.add(searchBar, BorderLayout.NORTH);
+
+        searchBar.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                searchAndHighlight();
+            }
+        });
+
+        // Search Button
+        JButton searchButton = new JButton("Szukaj");
+        searchButton.setPreferredSize(new Dimension(200, 30));
+        searchButton.setBackground(new Color(100, 149, 237));
+        searchButton.setForeground(Color.WHITE);
+        searchButton.setFocusPainted(false);
+        searchButton.addActionListener(e -> searchAndHighlight());
+
+        searchPanel.add(searchBar, BorderLayout.CENTER);
+        searchPanel.add(searchButton, BorderLayout.EAST);
+        panel.add(searchPanel, BorderLayout.NORTH);
 
         // Table
         String[] columnNames = {"OBRAZ", "NAZWA", "KATEGORIA", "CZAS GRY", "WIEK", "L. graczy", "OPIS", "UWAGI", "ILOŚĆ"};
@@ -84,13 +111,25 @@ public class GameListWindow extends JFrame {
                 }
             }
         };
-        JTable gameTable = new JTable(tableModel);
+        gameTable = new JTable(tableModel);
         gameTable.setRowHeight(60);
         gameTable.setFont(new Font("Arial", Font.PLAIN, 14));
         sorter = new TableRowSorter<>(tableModel);
         gameTable.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(gameTable);
         panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Add Mouse Listener for Image Clicks
+        gameTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int row = gameTable.rowAtPoint(e.getPoint());
+                int col = gameTable.columnAtPoint(e.getPoint());
+                if (col == 0 && gameTable.getValueAt(row, col) instanceof ImageIcon) {
+                    ImageIcon icon = (ImageIcon) gameTable.getValueAt(row, col);
+                    showImageInDialog(icon);
+                }
+            }
+        });
 
         // Sort and Filter Panel
         JPanel sortFilterPanel = new JPanel(new GridLayout(2, 1));
@@ -154,23 +193,41 @@ public class GameListWindow extends JFrame {
             String selectedOption = (String) filterComboBox.getSelectedItem();
             filterTable(selectedOption);
         });
+    }
 
-        // Search bar functionality
-        searchBar.addActionListener(e -> {
-            String text = searchBar.getText();
-            if (text.trim().length() == 0) {
-                sorter.setRowFilter(null);
-            } else {
-                sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
-            }
-        });
+    private void searchAndHighlight() {
+        String searchText = searchBar.getText().trim();
+        if (searchText.isEmpty() || searchText.equals("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)")) {
+            sorter.setRowFilter(null);
+        } else {
+            sorter.setRowFilter(RowFilter.regexFilter("(?i)" + searchText));
+        }
+
+        if (gameTable.getRowCount() > 0) {
+            gameTable.setRowSelectionInterval(0, 0);
+            gameTable.scrollRectToVisible(new Rectangle(gameTable.getCellRect(0, 0, true)));
+        } else {
+            JOptionPane.showMessageDialog(this, "Nie znaleziono wyników dla: " + searchText, "Błąd", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showImageInDialog(ImageIcon icon) {
+        JDialog dialog = new JDialog(this, "Powiększony obraz", true);
+        dialog.setLayout(new BorderLayout());
+
+        JLabel imageLabel = new JLabel(icon);
+        JScrollPane scrollPane = new JScrollPane(imageLabel);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        dialog.setSize(new Dimension((int) (icon.getIconWidth() * 1.5), (int) (icon.getIconHeight() * 1.5)));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     private void loadGamesFromDatabase() {
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
 
         for (Object[] game : games) {
-            // Convert image bytes to ImageIcon
             ImageIcon imageIcon = null;
             if (game[10] instanceof byte[]) {
                 byte[] imageBytes = (byte[]) game[10];
@@ -186,7 +243,7 @@ public class GameListWindow extends JFrame {
             }
             Object[] row = {imageIcon, game[1], game[2], game[3], game[4], game[5], game[6], game[7], game[8]};
             tableModel.addRow(row);
-            System.out.println("Added game to table: " + game[1]); // Debugging
+            System.out.println("Added game to table: " + game[1]);
         }
 
         System.out.println("All games loaded into table.");
@@ -215,13 +272,13 @@ public class GameListWindow extends JFrame {
         try {
             switch (filterBy) {
                 case "LICZBA GRACZY":
-                    rf = RowFilter.regexFilter(".*", 5); // Adjust the column index as necessary
+                    rf = RowFilter.regexFilter(".*", 5);
                     break;
                 case "KATEGORIA WIEKOWA":
-                    rf = RowFilter.regexFilter(".*", 4); // Adjust the column index as necessary
+                    rf = RowFilter.regexFilter(".*", 4);
                     break;
                 case "TYP GRY":
-                    rf = RowFilter.regexFilter(".*", 2); // Adjust the column index as necessary
+                    rf = RowFilter.regexFilter(".*", 2);
                     break;
             }
             sorter.setRowFilter(rf);

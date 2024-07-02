@@ -294,7 +294,7 @@ public class DatabaseOperations {
             pstmt.setInt(1, gameId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return Integer.parseInt(rs.getString("total_quantity"));
+                return rs.getInt("total_quantity");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -310,7 +310,7 @@ public class DatabaseOperations {
             pstmt.setInt(1, gameId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return Integer.parseInt(rs.getString("quantity"));
+                return rs.getInt("quantity");
             }
         } catch (SQLException e) {
             System.out.println(e.getMessage());

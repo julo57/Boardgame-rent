@@ -1,22 +1,22 @@
 package src.GUI;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableRowSorter;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import src.DatabaseOperations;
 
 public class LoggedInWindow extends JFrame {
     private Controllers controllers;
     private DefaultTableModel tableModel;
-    private JTable rentalTable; // Make rentalTable a class member
+    private JTable rentalTable;
+    private TableRowSorter<DefaultTableModel> sorter;
 
     public LoggedInWindow(Controllers controllers) {
         this.controllers = controllers;
@@ -27,7 +27,7 @@ public class LoggedInWindow extends JFrame {
     private void createAndShowGUI() {
         setTitle("Welcome");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600); // Adjusted size for better table visibility
+        setSize(800, 600);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(245, 245, 245));
@@ -44,33 +44,56 @@ public class LoggedInWindow extends JFrame {
         setContentPane(mainPanel);
         setLocationRelativeTo(null);
         setVisible(true);
-
-        System.out.println("GUI created and shown."); // Debugging
     }
 
     private void placeComponents(JPanel panel) {
         panel.setLayout(new BorderLayout());
 
-        // Search Bar
+        JPanel searchPanel = new JPanel(new BorderLayout());
         JTextField searchBar = new JTextField("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
         searchBar.setHorizontalAlignment(JTextField.CENTER);
-        searchBar.setPreferredSize(new Dimension(1000, 30));
+        searchBar.setPreferredSize(new Dimension(900, 30));
         searchBar.setFont(new Font("Arial", Font.PLAIN, 14));
         searchBar.setForeground(Color.GRAY);
-        panel.add(searchBar, BorderLayout.NORTH);
 
-        // Table
+        searchBar.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (searchBar.getText().equals("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)")) {
+                    searchBar.setText("");
+                    searchBar.setForeground(Color.BLACK);
+                }
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (searchBar.getText().isEmpty()) {
+                    searchBar.setForeground(Color.GRAY);
+                    searchBar.setText("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)");
+                    sorter.setRowFilter(null);
+                }
+            }
+        });
+
+        JButton searchButton = new JButton("SZUKAJ");
+        searchButton.setPreferredSize(new Dimension(100, 30));
+        searchButton.setBackground(new Color(100, 149, 237));
+        searchButton.setForeground(Color.WHITE);
+        searchButton.setFocusPainted(false);
+
+        searchPanel.add(searchBar, BorderLayout.CENTER);
+        searchPanel.add(searchButton, BorderLayout.EAST);
+        panel.add(searchPanel, BorderLayout.NORTH);
+
         String[] columnNames = {"ID", "Nazwa Użytkownika", "Nazwa Gry", "Data Wypożyczenia", "Ilość", "Akcje"};
         tableModel = new DefaultTableModel(columnNames, 0);
         rentalTable = new JTable(tableModel) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 5; // Only the "Akcje" column is editable
+                return column == 5; 
             }
 
             @Override
             public TableCellRenderer getCellRenderer(int row, int column) {
-                if (column == 4) { // Column for quantity (squares)
+                if (column == 4) {
                     return new SquareCellRenderer();
                 }
                 return super.getCellRenderer(row, column);
@@ -81,12 +104,11 @@ public class LoggedInWindow extends JFrame {
         rentalTable.setRowHeight(30);
         rentalTable.setFont(new Font("Arial", Font.PLAIN, 14));
 
-        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+        sorter = new TableRowSorter<>(tableModel);
         rentalTable.setRowSorter(sorter);
         JScrollPane scrollPane = new JScrollPane(rentalTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Add rental button
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(new Color(245, 245, 245));
         JButton addRentalButton = new JButton("DODAJ WYPOŻYCZENIE");
@@ -97,37 +119,38 @@ public class LoggedInWindow extends JFrame {
         buttonPanel.add(addRentalButton);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Add functionality to add rental button
         addRentalButton.addActionListener(e -> addNewRental());
 
-        System.out.println("Table components placed."); // Debugging
+        searchButton.addActionListener(e -> {
+            String text = searchBar.getText();
+            if (text.trim().length() == 0 || text.equals("WYSZUKIWARKA (GLOBALNA NA WSZYSTKIE LISTY)")) {
+                sorter.setRowFilter(null);
+            } else {
+                sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+            }
+        });
     }
 
     private void loadRentalsFromDatabase() {
         List<Object[]> rentals = DatabaseOperations.getAllRentals();
-        tableModel.setRowCount(0); // Clear the table before loading new data
+        tableModel.setRowCount(0); 
 
         for (Object[] rental : rentals) {
             tableModel.addRow(rental);
-            System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]); // Debugging
+            System.out.println("Added rental to table: " + rental[1] + " - " + rental[2]);
         }
-
-        System.out.println("All rentals loaded into table.");
     }
 
     private void markRentalAsReturned(JTable rentalTable, int row) {
-        String rentalId = tableModel.getValueAt(row, 0) != null ? tableModel.getValueAt(row, 0).toString() : "";
+        String rentalId = tableModel.getValueAt(row, 0).toString();
         String returnDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 
-        // Update the database
         DatabaseOperations.returnRental(rentalId, returnDate);
 
-        // Refresh rentals table
         loadRentalsFromDatabase();
 
         System.out.println("Rental marked as returned: " + rentalId);
 
-        // Refresh history window
         for (Window window : Window.getWindows()) {
             if (window instanceof HistoryWindow) {
                 ((HistoryWindow) window).refreshHistory();
@@ -142,7 +165,7 @@ public class LoggedInWindow extends JFrame {
 
         List<Object[]> games = DatabaseOperations.getAllBoardGames();
         for (Object[] game : games) {
-            gameComboBox.addItem((String) game[1]);  // Adding game names to the combo box
+            gameComboBox.addItem((String) game[1]);  
         }
 
         JPanel inputPanel = new JPanel(new GridLayout(3, 2));
@@ -180,13 +203,13 @@ public class LoggedInWindow extends JFrame {
                     throw new IllegalArgumentException("Nie można wypożyczyć więcej niż dostępna ilość!");
                 }
 
-                // Add new user if not exists
                 DatabaseOperations.insertUserIfNotExists(userName);
 
                 DatabaseOperations.insertRental(userName, String.valueOf(gameId), rentalDate, quantityStr);
-                DatabaseOperations.updateGameQuantity(gameId, gameQuantity - quantity); // Update game quantity in database
+                DatabaseOperations.updateGameQuantity(gameId, gameQuantity - quantity);
 
                 loadRentalsFromDatabase();
+                refreshUserList(); // Refresh the user list window
                 System.out.println("Dodano wypożyczenie: " + userName + " - " + gameName);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Ilość musi być liczbą!", "Błąd", JOptionPane.ERROR_MESSAGE);
@@ -200,7 +223,14 @@ public class LoggedInWindow extends JFrame {
         }
     }
 
-    // Custom cell renderer to draw green and red squares for quantity
+    private void refreshUserList() {
+        for (Window window : Window.getWindows()) {
+            if (window instanceof UserListWindow) {
+                ((UserListWindow) window).loadUsersFromDatabase();
+            }
+        }
+    }
+
     private static class SquareCellRenderer extends JPanel implements TableCellRenderer {
         private int totalQuantity;
         private int rentedQuantity;
@@ -212,7 +242,7 @@ public class LoggedInWindow extends JFrame {
             } else {
                 rentedQuantity = 0;
             }
-            String gameName = table.getValueAt(row, 2) != null ? table.getValueAt(row, 2).toString() : "";
+            String gameName = table.getValueAt(row, 2).toString();
             int gameId = getGameIdByName(gameName);
             totalQuantity = DatabaseOperations.getGameTotalQuantity(gameId);
 
@@ -227,14 +257,12 @@ public class LoggedInWindow extends JFrame {
             int x = padding;
             int y = (getHeight() - squareSize) / 2;
 
-            // Draw rented (red) squares
             for (int i = 0; i < rentedQuantity; i++) {
                 g.setColor(Color.RED);
                 g.fillRect(x, y, squareSize, squareSize);
                 x += squareSize + padding;
             }
 
-            // Draw available (green) squares
             for (int i = 0; i < (totalQuantity - rentedQuantity); i++) {
                 g.setColor(Color.GREEN);
                 g.fillRect(x, y, squareSize, squareSize);
@@ -253,7 +281,6 @@ public class LoggedInWindow extends JFrame {
         }
     }
 
-    // Custom button renderer
     private class ButtonRenderer extends JButton implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
@@ -266,7 +293,6 @@ public class LoggedInWindow extends JFrame {
         }
     }
 
-    // Custom button editor
     private class ButtonEditor extends DefaultCellEditor {
         private String label;
         private boolean clicked;
