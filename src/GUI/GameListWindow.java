@@ -119,7 +119,7 @@ public class GameListWindow extends JFrame {
         JScrollPane scrollPane = new JScrollPane(gameTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Add Mouse Listener for Image Clicks
+        // Add Mouse Listener for Image Clicks and Text Columns
         gameTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 int row = gameTable.rowAtPoint(e.getPoint());
@@ -127,6 +127,9 @@ public class GameListWindow extends JFrame {
                 if (col == 0 && gameTable.getValueAt(row, col) instanceof ImageIcon) {
                     ImageIcon icon = (ImageIcon) gameTable.getValueAt(row, col);
                     showImageInDialog(icon);
+                } else if (col == 6 || col == 7) { // Opis or Uwagi columns
+                    String text = gameTable.getValueAt(row, col).toString();
+                    showTextInDialog(text);
                 }
             }
         });
@@ -220,6 +223,22 @@ public class GameListWindow extends JFrame {
         dialog.add(scrollPane, BorderLayout.CENTER);
 
         dialog.setSize(new Dimension((int) (icon.getIconWidth() * 1.5), (int) (icon.getIconHeight() * 1.5)));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private void showTextInDialog(String text) {
+        JDialog dialog = new JDialog(this, "Szczegóły", true);
+        dialog.setLayout(new BorderLayout());
+
+        JTextArea textArea = new JTextArea(text);
+        textArea.setWrapStyleWord(true);
+        textArea.setLineWrap(true);
+        textArea.setEditable(false);
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        dialog.setSize(new Dimension(400, 300));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
