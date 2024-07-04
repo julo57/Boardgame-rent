@@ -1,5 +1,4 @@
 package src.GUI;
-
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -21,7 +20,7 @@ public class GameListWindow extends JFrame {
     private Controllers controllers;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> sorter;
-    private JTable gameTable; // Move declaration to class level
+    private JTable gameTable;
     private JTextField searchBar;
 
     public GameListWindow(Controllers controllers) {
@@ -48,7 +47,7 @@ public class GameListWindow extends JFrame {
         placeComponents(contentPanel);
 
         setContentPane(mainPanel);
-        setLocationRelativeTo(null); // Center the window
+        setLocationRelativeTo(null);
         setVisible(true);
     }
 
@@ -138,36 +137,81 @@ public class GameListWindow extends JFrame {
         JPanel sortFilterPanel = new JPanel(new GridLayout(2, 1));
         sortFilterPanel.setBackground(new Color(245, 245, 245));
 
-        JPanel sortPanel = new JPanel(new GridLayout(3, 1));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Sort Panel
+        JPanel sortPanel = new JPanel(new GridBagLayout());
         sortPanel.setBorder(BorderFactory.createTitledBorder("SORTUJ"));
         sortPanel.setBackground(new Color(245, 245, 245));
-        JLabel sortLabel = new JLabel("Sortuj według:");
-        sortLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.EAST;
+        sortPanel.add(new JLabel("Sortuj według:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
         String[] sortOptions = {"NAZWA", "CZAS GRY", "LICZBA GRACZY"};
         JComboBox<String> sortComboBox = new JComboBox<>(sortOptions);
+        sortPanel.add(sortComboBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.EAST;
+        sortPanel.add(new JLabel("Kierunek sortowania:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        String[] sortDirections = {"Rosnąco", "Malejąco"};
+        JComboBox<String> sortDirectionComboBox = new JComboBox<>(sortDirections);
+        sortPanel.add(sortDirectionComboBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
         JButton sortButton = new JButton("Sortuj");
+        sortButton.setPreferredSize(new Dimension(100, 30));
         sortButton.setBackground(new Color(100, 149, 237));
         sortButton.setForeground(Color.WHITE);
         sortButton.setFocusPainted(false);
-        sortPanel.add(sortLabel);
-        sortPanel.add(sortComboBox);
-        sortPanel.add(sortButton);
+        sortPanel.add(sortButton, gbc);
+
         sortFilterPanel.add(sortPanel);
 
-        JPanel filterPanel = new JPanel(new GridLayout(3, 1));
+        // Filter Panel
+        JPanel filterPanel = new JPanel(new GridBagLayout());
         filterPanel.setBorder(BorderFactory.createTitledBorder("FILTRUJ"));
         filterPanel.setBackground(new Color(245, 245, 245));
-        JLabel filterLabel = new JLabel("Filtruj według:");
-        filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.EAST;
+        filterPanel.add(new JLabel("Filtruj według:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
         String[] filterOptions = {"LICZBA GRACZY", "KATEGORIA WIEKOWA", "TYP GRY"};
         JComboBox<String> filterComboBox = new JComboBox<>(filterOptions);
+        filterPanel.add(filterComboBox, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
         JButton filterButton = new JButton("Filtruj");
+        filterButton.setPreferredSize(new Dimension(100, 30));
         filterButton.setBackground(new Color(100, 149, 237));
         filterButton.setForeground(Color.WHITE);
         filterButton.setFocusPainted(false);
-        filterPanel.add(filterLabel);
-        filterPanel.add(filterComboBox);
-        filterPanel.add(filterButton);
+        filterPanel.add(filterButton, gbc);
+
         sortFilterPanel.add(filterPanel);
 
         panel.add(sortFilterPanel, BorderLayout.EAST);
@@ -189,7 +233,8 @@ public class GameListWindow extends JFrame {
         // Add functionality to sort and filter
         sortButton.addActionListener(e -> {
             String selectedOption = (String) sortComboBox.getSelectedItem();
-            sortTable(selectedOption);
+            String selectedDirection = (String) sortDirectionComboBox.getSelectedItem();
+            sortTable(selectedOption, selectedDirection);
         });
 
         filterButton.addActionListener(e -> {
@@ -268,7 +313,7 @@ public class GameListWindow extends JFrame {
         System.out.println("All games loaded into table.");
     }
 
-    private void sortTable(String sortBy) {
+    private void sortTable(String sortBy, String sortDirection) {
         int columnIndex = -1;
         switch (sortBy) {
             case "NAZWA":
@@ -282,7 +327,8 @@ public class GameListWindow extends JFrame {
                 break;
         }
         if (columnIndex != -1) {
-            sorter.setSortKeys(List.of(new RowSorter.SortKey(columnIndex, SortOrder.ASCENDING)));
+            SortOrder sortOrder = sortDirection.equals("Rosnąco") ? SortOrder.ASCENDING : SortOrder.DESCENDING;
+            sorter.setSortKeys(List.of(new RowSorter.SortKey(columnIndex, sortOrder)));
         }
     }
 
